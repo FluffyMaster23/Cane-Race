@@ -103,6 +103,7 @@ function handleKeyPress(e) {
             if (gameState.playerLane > 0) {
                 gameState.playerLane--;
                 playSound('turnLeft');
+                updateObstacleLanes('left'); // Update obstacle lanes when player moves
                 updateObstaclePanning(); // Update panning when player moves
             }
             break;
@@ -112,6 +113,7 @@ function handleKeyPress(e) {
             if (gameState.playerLane < 2) {
                 gameState.playerLane++;
                 playSound('turnRight');
+                updateObstacleLanes('right'); // Update obstacle lanes when player moves
                 updateObstaclePanning(); // Update panning when player moves
             }
             break;
@@ -121,6 +123,36 @@ function handleKeyPress(e) {
             playSound('jump');
             break;
     }
+}
+
+function updateObstacleLanes(direction) {
+    // When player turns, shift all obstacle lanes in the opposite direction
+    // If player turns left, obstacles shift right relative to player
+    // If player turns right, obstacles shift left relative to player
+    gameState.obstacles.forEach(obstacle => {
+        if (direction === 'left') {
+            // Player turned left, so obstacles shift right
+            obstacle.lane++;
+        } else if (direction === 'right') {
+            // Player turned right, so obstacles shift left
+            obstacle.lane--;
+        }
+    });
+    
+    // Remove obstacles that went out of bounds (lane < 0 or lane > 2)
+    gameState.obstacles = gameState.obstacles.filter(obstacle => {
+        if (obstacle.lane < 0 || obstacle.lane > 2) {
+            // Stop the sound for obstacles going out of bounds
+            if (obstacle.soundId) {
+                const soundName = getSoundNameForObstacle(obstacle);
+                if (soundName && sounds[soundName]) {
+                    sounds[soundName].stop(obstacle.soundId);
+                }
+            }
+            return false; // Remove this obstacle
+        }
+        return true; // Keep this obstacle
+    });
 }
 
 function updateObstaclePanning() {
@@ -302,14 +334,7 @@ function checkCollisions() {
                 
                 // Play the pickup coin sound after stopping the loop
                 if (sounds.coinCollect) {
-                    console.log('Attempting to play pickupcoin.wav, loaded:', sounds.coinCollect.state());
-                    const pickupId = sounds.coinCollect.play();
-                    console.log('Pickup sound ID:', pickupId);
-                    
-                    // Add event listener to check if it actually plays
-                    sounds.coinCollect.once('play', function() {
-                        console.log('pickupcoin.wav is now playing');
-                    }, pickupId);
+                    sounds.coinCollect.play();
                 }
                 
                 updateStatus(`Collected ${obstacle.coinAmount} coins! Score: ${gameState.score}`);
