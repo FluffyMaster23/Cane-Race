@@ -5,10 +5,10 @@ let gameState = {
     score: 0,
     level: 1,
     speed: 1,
-    baseSpeed: 100, // Base speed in ms for obstacle movement
+    baseSpeed: 150, // Base speed in ms for obstacle movement - moderate pace
     obstacles: [], // Array of {type: 'cane'|'skateboard'|'coin', lane: 0-2, distance: number, coinAmount: number}
     lastObstacleSpawn: 0,
-    spawnInterval: 2000,
+    spawnInterval: 2500, // Spawn obstacles every 2.5 seconds at level 1
     animationFrame: null
 };
 
@@ -32,16 +32,16 @@ const sounds = {
     }),
     coinLoop: new Howl({src: ['sounds/items/coin/coin.wav'], loop: true}),
     
-    // Obstacle sounds with stereo panning
-    caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], stereo: 0}),
-    caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav'], stereo: -1}),
-    caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav'], stereo: 1}),
-caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav'], stereo: 0}),
-caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav'], stereo: -1}),
-caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav'], stereo: 1}),
-skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], stereo: 0}),
-skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], stereo: -1}),
-skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], stereo: 1}),
+    // Obstacle sounds - no initial panning, will be set dynamically
+    caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], volume: 0}),
+    caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav'], volume: 0}),
+    caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav'], volume: 0}),
+caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav'], volume: 0}),
+caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav'], volume: 0}),
+caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav'], volume: 0}),
+skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], volume: 0}),
+skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], volume: 0}),
+skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], volume: 0}),
 
     caneHit: null, // new Howl({src: ['sounds/cane/hit.mp3']}),
     skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav']}),
@@ -103,7 +103,6 @@ function handleKeyPress(e) {
             if (gameState.playerLane > 0) {
                 gameState.playerLane--;
                 playSound('turnLeft');
-                updateObstacleLanes('left'); // Update obstacle lanes when player moves
                 updateObstaclePanning(); // Update panning when player moves
             }
             break;
@@ -113,7 +112,6 @@ function handleKeyPress(e) {
             if (gameState.playerLane < 2) {
                 gameState.playerLane++;
                 playSound('turnRight');
-                updateObstacleLanes('right'); // Update obstacle lanes when player moves
                 updateObstaclePanning(); // Update panning when player moves
             }
             break;
@@ -125,65 +123,41 @@ function handleKeyPress(e) {
     }
 }
 
-function updateObstacleLanes(direction) {
-    // When player turns, shift all obstacle lanes in the opposite direction
-    // If player turns left, obstacles shift right relative to player
-    // If player turns right, obstacles shift left relative to player
+function updateObstaclePanning() {
+    // Update stereo panning and volume for all active obstacles based on player position and distance
     gameState.obstacles.forEach(obstacle => {
-        if (direction === 'left') {
-            // Player turned left, so obstacles shift right
-            obstacle.lane++;
-        } else if (direction === 'right') {
-            // Player turned right, so obstacles shift left
-            obstacle.lane--;
-        }
-    });
-    
-    // Remove obstacles that went out of bounds (lane < 0 or lane > 2)
-    gameState.obstacles = gameState.obstacles.filter(obstacle => {
-        if (obstacle.lane < 0 || obstacle.lane > 2) {
-            // Stop the sound for obstacles going out of bounds
-            if (obstacle.soundId) {
-                const soundName = getSoundNameForObstacle(obstacle);
-                if (soundName && sounds[soundName]) {
-                    sounds[soundName].stop(obstacle.soundId);
-                }
-            }
-            return false; // Remove this obstacle
-        }
-        return true; // Keep this obstacle
+        updateSingleObstacleSound(obstacle);
     });
 }
 
-function updateObstaclePanning() {
-    // Update stereo panning for all active obstacles based on player position
-    gameState.obstacles.forEach(obstacle => {
-        if (obstacle.soundId) {
-            // Calculate relative panning: -1 (left) to 1 (right)
-            // If player is in lane 0, obstacle in lane 2 should sound right (1)
-            // If player is in lane 2, obstacle in lane 0 should sound left (-1)
-            const relativeLane = obstacle.lane - gameState.playerLane;
-            let panValue = 0;
-            
-            if (relativeLane === -1) panValue = -1;      // Obstacle to the left
-            else if (relativeLane === 1) panValue = 1;   // Obstacle to the right
-            else panValue = 0;                            // Same lane
-            
-            // Get the base sound (center version) for this obstacle type
-            let baseSound = null;
-            if (obstacle.type === 'cane') {
-                baseSound = sounds.caneConcretecenter;
-            } else if (obstacle.type === 'skateboard') {
-                baseSound = sounds.skateboardCenter;
-            } else if (obstacle.type === 'coin') {
-                baseSound = sounds.coinLoop;
-            }
-            
-            if (baseSound) {
-                baseSound.stereo(panValue, obstacle.soundId);
-            }
-        }
-    });
+function updateSingleObstacleSound(obstacle) {
+    if (!obstacle.soundId) return;
+    
+    const soundName = getSoundNameForObstacle(obstacle);
+    if (!soundName || !sounds[soundName]) return;
+    
+    // Calculate relative lane position
+    const relativeLane = obstacle.lane - gameState.playerLane;
+    
+    // Distance-based volume: louder as it gets closer (0-100 distance)
+    // At distance 100: very quiet (0.05)
+    // At distance 50: medium (0.3)
+    // At distance 0: loud (1.0)
+    let volume = 0;
+    if (obstacle.distance > 0) {
+        volume = Math.max(0.05, 1 - (obstacle.distance / 120));
+    } else {
+        // Fading out after passing
+        volume = Math.max(0, 1 + (obstacle.distance / 10));
+    }
+    
+    // Panning based on relative lane: -0.7 to 0.7 for smoother stereo
+    let panValue = relativeLane * 0.7; // -0.7 (left), 0 (center), 0.7 (right)
+    panValue = Math.max(-1, Math.min(1, panValue)); // Clamp to -1 to 1
+    
+    // Apply volume and panning
+    sounds[soundName].volume(volume, obstacle.soundId);
+    sounds[soundName].stereo(panValue, obstacle.soundId);
 }
 
 function playSound(soundName) {
@@ -236,30 +210,29 @@ function spawnObstacle() {
         soundId: null // Store the sound ID for this obstacle
     };
     
-    // Calculate initial panning based on relative position to player
-    const relativeLane = lane - gameState.playerLane;
-    let panValue = 0;
+    gameState.obstacles.push(obstacle);
     
-    if (relativeLane === -1) panValue = -1;      // Obstacle to the left
-    else if (relativeLane === 1) panValue = 1;   // Obstacle to the right
-    else panValue = 0;                            // Same lane
-    
-    // Play obstacle approach sound with dynamic panning
+    // Play obstacle approach sound based on lane and store sound ID
     if (obstacleType === 'cane') {
-        sounds.caneConcretecenter.stereo(panValue);
-        obstacle.soundId = sounds.caneConcretecenter.play();
+        const laneSounds = ['caneConcreteleft', 'caneConcretecenter', 'caneConcreteright'];
+        const soundName = laneSounds[lane];
+        obstacle.soundId = sounds[soundName].play();
+        // Set initial volume and panning
+        updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'skateboard') {
-        sounds.skateboardCenter.stereo(panValue);
-        obstacle.soundId = sounds.skateboardCenter.play();
+        const laneSounds = ['skateboardLeft', 'skateboardCenter', 'skateboardRight'];
+        const soundName = laneSounds[lane];
+        obstacle.soundId = sounds[soundName].play();
+        // Set initial volume and panning
+        updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'coin') {
         // Play coin loop sound (it will loop continuously)
         if (sounds.coinLoop) {
-            sounds.coinLoop.stereo(panValue);
             obstacle.soundId = sounds.coinLoop.play();
+            // Set initial volume and panning
+            updateSingleObstacleSound(obstacle);
         }
     }
-    
-    gameState.obstacles.push(obstacle);
 }
 
 function moveObstacles() {
@@ -268,20 +241,14 @@ function moveObstacles() {
         const obstacle = gameState.obstacles[i];
         obstacle.distance -= 1;
         
-        // Stop sound when obstacle passes by (if on different lane)
-        if (obstacle.distance < -2 && !obstacle.soundStopped && obstacle.soundId && obstacle.lane !== gameState.playerLane) {
-            const soundName = getSoundNameForObstacle(obstacle);
-            if (soundName && sounds[soundName]) {
-                sounds[soundName].stop(obstacle.soundId);
-                obstacle.soundStopped = true; // Mark as stopped to prevent multiple stops
-            }
-        }
+        // Update volume and panning continuously as obstacle moves
+        updateSingleObstacleSound(obstacle);
         
         // Remove obstacles that passed the player without collision
         if (obstacle.distance < -5) {
             
             // Stop the sound if still playing
-            if (obstacle.soundId && !obstacle.soundStopped) {
+            if (obstacle.soundId) {
                 const soundName = getSoundNameForObstacle(obstacle);
                 if (soundName && sounds[soundName]) {
                     sounds[soundName].stop(obstacle.soundId);
@@ -305,9 +272,11 @@ function moveObstacles() {
 
 function getSoundNameForObstacle(obstacle) {
     if (obstacle.type === 'cane') {
-        return 'caneConcretecenter';
+        const laneSounds = ['caneConcreteleft', 'caneConcretecenter', 'caneConcreteright'];
+        return laneSounds[obstacle.lane];
     } else if (obstacle.type === 'skateboard') {
-        return 'skateboardCenter';
+        const laneSounds = ['skateboardLeft', 'skateboardCenter', 'skateboardRight'];
+        return laneSounds[obstacle.lane];
     } else if (obstacle.type === 'coin') {
         return 'coinLoop';
     }
@@ -325,18 +294,18 @@ function checkCollisions() {
                 // Collect coin
                 gameState.score += obstacle.coinAmount;
                 
-                // Stop the specific coin loop sound instance
+                // Stop the specific coin loop sound instance first
                 if (obstacle.soundId && sounds.coinLoop) {
                     sounds.coinLoop.stop(obstacle.soundId);
                 }
                 
-                // Remove from obstacles array first
-                gameState.obstacles.splice(i, 1);
+                // Play the pickup coin sound FIRST
+                console.log('Playing pickup sound, sound state:', sounds.coinCollect.state());
+                const pickupId = sounds.coinCollect.play();
+                console.log('Pickup sound ID:', pickupId);
                 
-                // Play the pickup coin sound after stopping the loop
-                if (sounds.coinCollect) {
-                    sounds.coinCollect.play();
-                }
+                // Remove from obstacles array AFTER starting pickup sound
+                gameState.obstacles.splice(i, 1);
                 
                 updateStatus(`Collected ${obstacle.coinAmount} coins! Score: ${gameState.score}`);
                 checkLevelUp();
@@ -353,7 +322,7 @@ function checkCollisions() {
 }
 
 function checkLevelUp() {
-    const newLevel = Math.floor(gameState.score / 100) + 1;
+    const newLevel = Math.floor(gameState.score / 10) + 1;
     
     if (newLevel > gameState.level) {
         gameState.level = newLevel;
@@ -372,7 +341,7 @@ function endGame(hitBy) {
     // Stop footstep sounds
     stopFootsteps();
     
-    // Stop all obstacle sounds including coin loops (but not the hit sound that just played)
+    // Stop all obstacle sounds including coin loops
     gameState.obstacles.forEach(obstacle => {
         if (obstacle.soundId) {
             const soundName = getSoundNameForObstacle(obstacle);
@@ -381,6 +350,9 @@ function endGame(hitBy) {
             }
         }
     });
+    
+    // Stop ALL sounds using Howler
+    Howler.stop();
     
     // Play game over sound later when implemented
     // playSound('gameOver');
@@ -391,10 +363,10 @@ function endGame(hitBy) {
     updateStatus(message);
     announceToScreenReader(message);
     
-    // Show play button again after a delay
+    // Show play button again
     setTimeout(() => {
         document.getElementById("play").style.display = "inline-block";
-    }, 2000);
+    }, 1000);
 }
 
 function playFootsteps() {
@@ -448,4 +420,4 @@ function announceToScreenReader(message) {
     setTimeout(() => {
         document.body.removeChild(announcement);
     }, 1000);
-}       
+}
