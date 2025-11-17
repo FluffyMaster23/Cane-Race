@@ -103,6 +103,7 @@ function handleKeyPress(e) {
             if (gameState.playerLane > 0) {
                 gameState.playerLane--;
                 playSound('turnLeft');
+                updateObstaclePanning(); // Update panning when player moves
             }
             break;
             
@@ -111,6 +112,7 @@ function handleKeyPress(e) {
             if (gameState.playerLane < 2) {
                 gameState.playerLane++;
                 playSound('turnRight');
+                updateObstaclePanning(); // Update panning when player moves
             }
             break;
             
@@ -119,6 +121,28 @@ function handleKeyPress(e) {
             playSound('jump');
             break;
     }
+}
+
+function updateObstaclePanning() {
+    // Update stereo panning for all active obstacles based on player position
+    gameState.obstacles.forEach(obstacle => {
+        if (obstacle.soundId) {
+            const soundName = getSoundNameForObstacle(obstacle);
+            if (soundName && sounds[soundName]) {
+                // Calculate relative panning: -1 (left) to 1 (right)
+                // If player is in lane 0, obstacle in lane 2 should sound right (1)
+                // If player is in lane 2, obstacle in lane 0 should sound left (-1)
+                const relativeLane = obstacle.lane - gameState.playerLane;
+                let panValue = 0;
+                
+                if (relativeLane === -1) panValue = -1;      // Obstacle to the left
+                else if (relativeLane === 1) panValue = 1;   // Obstacle to the right
+                else panValue = 0;                            // Same lane
+                
+                sounds[soundName].stereo(panValue, obstacle.soundId);
+            }
+        }
+    });
 }
 
 function playSound(soundName) {
@@ -254,18 +278,23 @@ function checkCollisions() {
                 // Collect coin
                 gameState.score += obstacle.coinAmount;
                 
-                // Stop the specific coin loop sound instance
+                // Stop the specific coin loop sound instance first
                 if (obstacle.soundId && sounds.coinLoop) {
                     sounds.coinLoop.stop(obstacle.soundId);
                 }
                 
-                // Play the pickup coin sound
-                console.log('Playing pickup sound, sound state:', sounds.coinCollect.state());
-                const pickupId = sounds.coinCollect.play();
-                console.log('Pickup sound ID:', pickupId);
+                // Remove from obstacles array BEFORE playing pickup sound
+                // This prevents it from being stopped by game loop
+                gameState.obstacles.splice(i, 1);
+                
+                // Play the pickup coin sound with a slight delay to ensure it's not interrupted
+                setTimeout(() => {
+                    console.log('Playing pickup sound, sound state:', sounds.coinCollect.state());
+                    const pickupId = sounds.coinCollect.play();
+                    console.log('Pickup sound ID:', pickupId);
+                }, 10);
                 
                 updateStatus(`Collected ${obstacle.coinAmount} coins! Score: ${gameState.score}`);
-                gameState.obstacles.splice(i, 1);
                 checkLevelUp();
                 
             } else {
