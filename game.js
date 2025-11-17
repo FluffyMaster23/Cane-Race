@@ -127,19 +127,28 @@ function updateObstaclePanning() {
     // Update stereo panning for all active obstacles based on player position
     gameState.obstacles.forEach(obstacle => {
         if (obstacle.soundId) {
-            const soundName = getSoundNameForObstacle(obstacle);
-            if (soundName && sounds[soundName]) {
-                // Calculate relative panning: -1 (left) to 1 (right)
-                // If player is in lane 0, obstacle in lane 2 should sound right (1)
-                // If player is in lane 2, obstacle in lane 0 should sound left (-1)
-                const relativeLane = obstacle.lane - gameState.playerLane;
-                let panValue = 0;
-                
-                if (relativeLane === -1) panValue = -1;      // Obstacle to the left
-                else if (relativeLane === 1) panValue = 1;   // Obstacle to the right
-                else panValue = 0;                            // Same lane
-                
-                sounds[soundName].stereo(panValue, obstacle.soundId);
+            // Calculate relative panning: -1 (left) to 1 (right)
+            // If player is in lane 0, obstacle in lane 2 should sound right (1)
+            // If player is in lane 2, obstacle in lane 0 should sound left (-1)
+            const relativeLane = obstacle.lane - gameState.playerLane;
+            let panValue = 0;
+            
+            if (relativeLane === -1) panValue = -1;      // Obstacle to the left
+            else if (relativeLane === 1) panValue = 1;   // Obstacle to the right
+            else panValue = 0;                            // Same lane
+            
+            // Get the base sound (center version) for this obstacle type
+            let baseSound = null;
+            if (obstacle.type === 'cane') {
+                baseSound = sounds.caneConcretecenter;
+            } else if (obstacle.type === 'skateboard') {
+                baseSound = sounds.skateboardCenter;
+            } else if (obstacle.type === 'coin') {
+                baseSound = sounds.coinLoop;
+            }
+            
+            if (baseSound) {
+                baseSound.stereo(panValue, obstacle.soundId);
             }
         }
     });
@@ -195,18 +204,25 @@ function spawnObstacle() {
         soundId: null // Store the sound ID for this obstacle
     };
     
-    // Play obstacle approach sound based on lane and store sound ID
+    // Calculate initial panning based on relative position to player
+    const relativeLane = lane - gameState.playerLane;
+    let panValue = 0;
+    
+    if (relativeLane === -1) panValue = -1;      // Obstacle to the left
+    else if (relativeLane === 1) panValue = 1;   // Obstacle to the right
+    else panValue = 0;                            // Same lane
+    
+    // Play obstacle approach sound with dynamic panning
     if (obstacleType === 'cane') {
-        const laneSounds = ['caneConcreteleft', 'caneConcretecenter', 'caneConcreteright'];
-        const soundName = laneSounds[lane];
-        obstacle.soundId = sounds[soundName].play();
+        sounds.caneConcretecenter.stereo(panValue);
+        obstacle.soundId = sounds.caneConcretecenter.play();
     } else if (obstacleType === 'skateboard') {
-        const laneSounds = ['skateboardLeft', 'skateboardCenter', 'skateboardRight'];
-        const soundName = laneSounds[lane];
-        obstacle.soundId = sounds[soundName].play();
+        sounds.skateboardCenter.stereo(panValue);
+        obstacle.soundId = sounds.skateboardCenter.play();
     } else if (obstacleType === 'coin') {
         // Play coin loop sound (it will loop continuously)
         if (sounds.coinLoop) {
+            sounds.coinLoop.stereo(panValue);
             obstacle.soundId = sounds.coinLoop.play();
         }
     }
@@ -256,11 +272,9 @@ function moveObstacles() {
 
 function getSoundNameForObstacle(obstacle) {
     if (obstacle.type === 'cane') {
-        const laneSounds = ['caneConcreteleft', 'caneConcretecenter', 'caneConcreteright'];
-        return laneSounds[obstacle.lane];
+        return 'caneConcretecenter';
     } else if (obstacle.type === 'skateboard') {
-        const laneSounds = ['skateboardLeft', 'skateboardCenter', 'skateboardRight'];
-        return laneSounds[obstacle.lane];
+        return 'skateboardCenter';
     } else if (obstacle.type === 'coin') {
         return 'coinLoop';
     }
