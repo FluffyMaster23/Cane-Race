@@ -1,0 +1,14 @@
+# Cane Race: Cane Jump And Run
+language: HTMl, JavaScript
+Web based game
+Goal: run and avoid people with canes and people on skateboards
+coins can be collected to purchase upgrades in the shop
+no ideas for upgrades yet
+## Main Game
+- player runs straight, can change 3 lanes with left/right arrows
+- random amount of coins can be collected along the way which are added to the score when the player dies
+- player dies by getting hit by a cane or skateboard
+- when player dies, game ends and score from avoiding a certain number of obstacles and collecting coins is summed up, 1 obstacle avoided = 1 point.
+- website consist of a game heading, a play button and a shop button. When play button is pressed, arrow keys and spacebar can be used to control the player, goes into browse/focus mode for screenereader automatically.
+- shop button opens up new web page in new browser tab, displays a list of items along with how many coins they are worth, but work in progress for now...
+- list of upgrades coming soon...
