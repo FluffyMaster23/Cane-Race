@@ -297,13 +297,20 @@ function checkCollisions() {
                     sounds.coinLoop.stop(obstacle.soundId);
                 }
                 
-                // Play the pickup coin sound immediately
-                if (sounds.coinCollect) {
-                    sounds.coinCollect.play();
-                }
-                
-                // Remove from obstacles array
+                // Remove from obstacles array first
                 gameState.obstacles.splice(i, 1);
+                
+                // Play the pickup coin sound after stopping the loop
+                if (sounds.coinCollect) {
+                    console.log('Attempting to play pickupcoin.wav, loaded:', sounds.coinCollect.state());
+                    const pickupId = sounds.coinCollect.play();
+                    console.log('Pickup sound ID:', pickupId);
+                    
+                    // Add event listener to check if it actually plays
+                    sounds.coinCollect.once('play', function() {
+                        console.log('pickupcoin.wav is now playing');
+                    }, pickupId);
+                }
                 
                 updateStatus(`Collected ${obstacle.coinAmount} coins! Score: ${gameState.score}`);
                 checkLevelUp();
