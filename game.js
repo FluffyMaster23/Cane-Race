@@ -292,21 +292,18 @@ function checkCollisions() {
                 // Collect coin
                 gameState.score += obstacle.coinAmount;
                 
-                // Stop the specific coin loop sound instance first
+                // Stop the specific coin loop sound instance
                 if (obstacle.soundId && sounds.coinLoop) {
                     sounds.coinLoop.stop(obstacle.soundId);
                 }
                 
-                // Remove from obstacles array BEFORE playing pickup sound
-                // This prevents it from being stopped by game loop
-                gameState.obstacles.splice(i, 1);
+                // Play the pickup coin sound immediately
+                if (sounds.coinCollect) {
+                    sounds.coinCollect.play();
+                }
                 
-                // Play the pickup coin sound with a slight delay to ensure it's not interrupted
-                setTimeout(() => {
-                    console.log('Playing pickup sound, sound state:', sounds.coinCollect.state());
-                    const pickupId = sounds.coinCollect.play();
-                    console.log('Pickup sound ID:', pickupId);
-                }, 10);
+                // Remove from obstacles array
+                gameState.obstacles.splice(i, 1);
                 
                 updateStatus(`Collected ${obstacle.coinAmount} coins! Score: ${gameState.score}`);
                 checkLevelUp();
@@ -323,7 +320,7 @@ function checkCollisions() {
 }
 
 function checkLevelUp() {
-    const newLevel = Math.floor(gameState.score / 10) + 1;
+    const newLevel = Math.floor(gameState.score / 100) + 1;
     
     if (newLevel > gameState.level) {
         gameState.level = newLevel;
@@ -342,7 +339,7 @@ function endGame(hitBy) {
     // Stop footstep sounds
     stopFootsteps();
     
-    // Stop all obstacle sounds including coin loops
+    // Stop all obstacle sounds including coin loops (but not the hit sound that just played)
     gameState.obstacles.forEach(obstacle => {
         if (obstacle.soundId) {
             const soundName = getSoundNameForObstacle(obstacle);
@@ -351,9 +348,6 @@ function endGame(hitBy) {
             }
         }
     });
-    
-    // Stop ALL sounds using Howler
-    Howler.stop();
     
     // Play game over sound later when implemented
     // playSound('gameOver');
@@ -364,10 +358,10 @@ function endGame(hitBy) {
     updateStatus(message);
     announceToScreenReader(message);
     
-    // Show play button again
+    // Show play button again after a delay
     setTimeout(() => {
         document.getElementById("play").style.display = "inline-block";
-    }, 1000);
+    }, 2000);
 }
 
 function playFootsteps() {
