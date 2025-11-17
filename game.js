@@ -269,10 +269,11 @@ function moveObstacles() {
         obstacle.distance -= 1;
         
         // Fade out sound when obstacle is passing by (if on different lane)
-        if (obstacle.distance < 0 && obstacle.soundId && obstacle.lane !== gameState.playerLane) {
+        if (obstacle.distance < 0 && !obstacle.fadedOut && obstacle.soundId && obstacle.lane !== gameState.playerLane) {
             const soundName = getSoundNameForObstacle(obstacle);
             if (soundName && sounds[soundName]) {
                 sounds[soundName].fade(1, 0, 500, obstacle.soundId); // Fade out over 500ms
+                obstacle.fadedOut = true; // Mark as faded to prevent multiple fades
             }
         }
         
