@@ -268,12 +268,12 @@ function moveObstacles() {
         const obstacle = gameState.obstacles[i];
         obstacle.distance -= 1;
         
-        // Fade out sound when obstacle is passing by (if on different lane)
-        if (obstacle.distance < 0 && !obstacle.fadedOut && obstacle.soundId && obstacle.lane !== gameState.playerLane) {
+        // Stop sound when obstacle passes by (if on different lane)
+        if (obstacle.distance < -2 && !obstacle.soundStopped && obstacle.soundId && obstacle.lane !== gameState.playerLane) {
             const soundName = getSoundNameForObstacle(obstacle);
             if (soundName && sounds[soundName]) {
-                sounds[soundName].fade(1, 0, 500, obstacle.soundId); // Fade out over 500ms
-                obstacle.fadedOut = true; // Mark as faded to prevent multiple fades
+                sounds[soundName].stop(obstacle.soundId);
+                obstacle.soundStopped = true; // Mark as stopped to prevent multiple stops
             }
         }
         
@@ -281,7 +281,7 @@ function moveObstacles() {
         if (obstacle.distance < -5) {
             
             // Stop the sound if still playing
-            if (obstacle.soundId) {
+            if (obstacle.soundId && !obstacle.soundStopped) {
                 const soundName = getSoundNameForObstacle(obstacle);
                 if (soundName && sounds[soundName]) {
                     sounds[soundName].stop(obstacle.soundId);
