@@ -31,16 +31,16 @@ const sounds = {
         }
     }),
     
-    // Obstacle sounds with spatial audio enabled
-    caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], stereo: true}),
-    caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav'], stereo: true}),
-    caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav'], stereo: true}),
-caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav'], stereo: true}),
-caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav'], stereo: true}),
-caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav'], stereo: true}),
-skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], stereo: true}),
-skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], stereo: true}),
-skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], stereo: true}),
+    // Obstacle sounds - left/center/right based on obstacle lane
+    caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav']}),
+    caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav']}),
+    caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav']}),
+caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav']}),
+caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav']}),
+caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav']}),
+skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav']}),
+skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav']}),
+skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav']}),
 
     caneHit: null, // new Howl({src: ['sounds/cane/hit.mp3']}),
     skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav']}),
@@ -102,7 +102,6 @@ function handleKeyPress(e) {
             if (gameState.playerLane > 0) {
                 gameState.playerLane--;
                 playSound('turnLeft');
-                switchObstacleSounds(); // Switch sounds when player moves
             }
             break;
             
@@ -111,7 +110,6 @@ function handleKeyPress(e) {
             if (gameState.playerLane < 2) {
                 gameState.playerLane++;
                 playSound('turnRight');
-                switchObstacleSounds(); // Switch sounds when player moves
             }
             break;
             
@@ -120,47 +118,6 @@ function handleKeyPress(e) {
             playSound('jump');
             break;
     }
-}
-
-function switchObstacleSounds() {
-    // When player changes lanes, switch to the appropriate sound file for each obstacle
-    gameState.obstacles.forEach(obstacle => {
-        if (!obstacle.soundId || obstacle.type === 'coin') return;
-        
-        // Stop the current sound
-        const oldSoundName = getSoundNameForObstacle(obstacle);
-        if (oldSoundName && sounds[oldSoundName]) {
-            sounds[oldSoundName].stop(obstacle.soundId);
-        }
-        
-        // Get the new sound name based on relative position
-        const relativeLane = obstacle.lane - gameState.playerLane;
-        let newSoundName;
-        
-        if (obstacle.type === 'cane') {
-            if (relativeLane === -1) {
-                newSoundName = 'caneConcreteleft';
-            } else if (relativeLane === 0) {
-                newSoundName = 'caneConcretecenter';
-            } else {
-                newSoundName = 'caneConcreteright';
-            }
-        } else if (obstacle.type === 'skateboard') {
-            if (relativeLane === -1) {
-                newSoundName = 'skateboardLeft';
-            } else if (relativeLane === 0) {
-                newSoundName = 'skateboardCenter';
-            } else {
-                newSoundName = 'skateboardRight';
-            }
-        }
-        
-        // Play the new sound and update the soundId
-        if (newSoundName && sounds[newSoundName]) {
-            obstacle.soundId = sounds[newSoundName].play();
-            updateSingleObstacleSound(obstacle);
-        }
-    });
 }
 
 function updateSingleObstacleSound(obstacle) {
