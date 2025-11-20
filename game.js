@@ -102,7 +102,6 @@ function handleKeyPress(e) {
             if (gameState.playerLane > 0) {
                 gameState.playerLane--;
                 playSound('turnLeft');
-                updateObstaclePanning(); // Update panning when player moves
             }
             break;
             
@@ -111,7 +110,6 @@ function handleKeyPress(e) {
             if (gameState.playerLane < 2) {
                 gameState.playerLane++;
                 playSound('turnRight');
-                updateObstaclePanning(); // Update panning when player moves
             }
             break;
             
@@ -130,16 +128,10 @@ function updateObstaclePanning() {
 }
 
 function updateSingleObstacleSound(obstacle) {
-    if (!obstacle.soundId) {
-        console.log('No soundId for obstacle:', obstacle.type);
-        return;
-    }
+    if (!obstacle.soundId) return;
     
     const soundName = getSoundNameForObstacle(obstacle);
-    if (!soundName || !sounds[soundName]) {
-        console.log('No sound for obstacle:', obstacle.type, 'soundName:', soundName);
-        return;
-    }
+    if (!soundName || !sounds[soundName]) return;
     
     // Calculate relative lane position
     const relativeLane = obstacle.lane - gameState.playerLane;
@@ -156,15 +148,8 @@ function updateSingleObstacleSound(obstacle) {
         volume = Math.max(0, 1 + (obstacle.distance / 10));
     }
     
-    // Panning based on relative lane: full stereo separation
-    let panValue = relativeLane * 1.0; // -1 (left), 0 (center), 1 (right)
-    panValue = Math.max(-1, Math.min(1, panValue)); // Clamp to -1 to 1
-    
-    console.log('Updating sound:', obstacle.type, 'Lane:', obstacle.lane, 'PlayerLane:', gameState.playerLane, 'Pan:', panValue, 'Volume:', volume);
-    
-    // Apply volume and panning
+    // Apply volume only (no dynamic panning since sounds are already panned)
     sounds[soundName].volume(volume, obstacle.soundId);
-    sounds[soundName].stereo(panValue, obstacle.soundId);
 }
 
 function playSound(soundName) {
