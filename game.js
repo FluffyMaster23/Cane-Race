@@ -30,7 +30,7 @@ const sounds = {
             console.error('Failed to load pickupcoin.wav:', error);
         }
     }),
-    coinLoop: new Howl({src: ['sounds/items/coin/coin.wav'], loop: true}),
+    coinLoop: new Howl({src: ['sounds/items/coin/coin.wav'], loop: true, rate: 1.5}),
     
     // Obstacle sounds - no initial panning, will be set dynamically
     caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], volume: 0}),
@@ -263,9 +263,20 @@ function moveObstacles() {
                 gameState.score += 1;
                 updateStatus(`Avoided cane! +1 point. Score: ${gameState.score}`);
             }
+            // Note: Coins don't give points for avoiding, only for collecting
             
             gameState.obstacles.splice(i, 1);
             checkLevelUp();
+        }
+        
+        // Special handling for coins: only remove if they passed AND player was in same lane
+        // This prevents coins from disappearing when player dodges to another lane
+        if (obstacle.type === 'coin' && obstacle.distance < -5 && obstacle.distance > -10) {
+            // Coin is behind player but recently passed - check if player dodged it
+            // If player is NOT in the coin's lane, keep the coin active longer
+            if (obstacle.lane !== gameState.playerLane) {
+                obstacle.distance = -4; // Keep it alive a bit longer
+            }
         }
     }
 }
