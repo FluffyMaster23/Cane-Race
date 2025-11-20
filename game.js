@@ -38,6 +38,7 @@ const sounds = {
             console.error('Failed to load pickupcoin.wav:', error);
         }
     }),
+    coinLoop: new Howl({src: ['sounds/items/coin/coin.wav'], loop: true}),
     
     // Obstacle sounds - left/center/right based on obstacle lane
     caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], loop: false}),
@@ -49,8 +50,8 @@ caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav'], loop: 
 skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], loop: false}),
 skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], loop: false}),
 skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], loop: false}),
-
-    caneHit: null, // new Howl({src: ['sounds/cane/hit.mp3']}),
+    
+    caneHit: new Howl({src: ['sounds/cane/caneHit.wav']}),
     skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav']}),
     
     // Game sounds
