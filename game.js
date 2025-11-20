@@ -30,7 +30,7 @@ const sounds = {
             console.error('Failed to load pickupcoin.wav:', error);
         }
     }),
-    coinLoop: new Howl({src: ['sounds/items/coin/coin.wav'], loop: true, rate: 1.5}),
+    coinLoop: new Howl({src: ['sounds/items/coin/coin.wav'], loop: true, rate: 1.2}),
     
     // Obstacle sounds - no initial panning, will be set dynamically
     caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], volume: 0}),
