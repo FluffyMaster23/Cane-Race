@@ -30,7 +30,6 @@ const sounds = {
             console.error('Failed to load pickupcoin.wav:', error);
         }
     }),
-    coinLoop: new Howl({src: ['sounds/items/coin/coin.wav'], loop: true, rate: 1.2}),
     
     // Obstacle sounds - no initial panning, will be set dynamically
     caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], volume: 0}),
@@ -226,12 +225,7 @@ function spawnObstacle() {
         // Set initial volume and panning
         updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'coin') {
-        // Play coin loop sound (it will loop continuously)
-        if (sounds.coinLoop) {
-            obstacle.soundId = sounds.coinLoop.play();
-            // Set initial volume and panning
-            updateSingleObstacleSound(obstacle);
-        }
+        // Coins don't make sound until collected
     }
 }
 
@@ -288,9 +282,8 @@ function getSoundNameForObstacle(obstacle) {
     } else if (obstacle.type === 'skateboard') {
         const laneSounds = ['skateboardLeft', 'skateboardCenter', 'skateboardRight'];
         return laneSounds[obstacle.lane];
-    } else if (obstacle.type === 'coin') {
-        return 'coinLoop';
     }
+    // Coins have no sound until collected
     return null;
 }
 
@@ -298,17 +291,13 @@ function checkCollisions() {
     for (let i = gameState.obstacles.length - 1; i >= 0; i--) {
         const obstacle = gameState.obstacles[i];
         
-        // Check if obstacle is at player position (distance near 0) and in same lane
-        if (obstacle.distance <= 2 && obstacle.distance >= -2 && obstacle.lane === gameState.playerLane) {
+        // Check if obstacle is at player position and in same lane
+        if (obstacle.lane === gameState.playerLane) {
             
-            if (obstacle.type === 'coin') {
+            // Coins collected at distance 0
+            if (obstacle.type === 'coin' && obstacle.distance <= 1 && obstacle.distance >= -1) {
                 // Collect coin
                 gameState.score += obstacle.coinAmount;
-                
-                // Stop the specific coin loop sound instance first
-                if (obstacle.soundId && sounds.coinLoop) {
-                    sounds.coinLoop.stop(obstacle.soundId);
-                }
                 
                 // Remove from obstacles array
                 gameState.obstacles.splice(i, 1);
@@ -318,8 +307,10 @@ function checkCollisions() {
                 
                 updateStatus(`Collected ${obstacle.coinAmount} coins! Score: ${gameState.score}`);
                 checkLevelUp();
-                
-            } else {
+            }
+            
+            // Canes and skateboards hit at distance 2
+            if ((obstacle.type === 'cane' || obstacle.type === 'skateboard') && obstacle.distance <= 2 && obstacle.distance >= -2) {
                 // Hit by cane or skateboard - game over
                 const hitSound = obstacle.type === 'cane' ? 'caneHit' : 'skateboardHit';
                 playSound(hitSound);
