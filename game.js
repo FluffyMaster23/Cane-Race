@@ -16,8 +16,16 @@ let gameState = {
 const sounds = {
     // Player sounds
     jump: null, // new Howl({src: ['sounds/player/jump.mp3']}),
-    turnLeft: new Howl({src: ['sounds/player/turn_left.wav']}),
-    turnRight: new Howl({src: ['sounds/player/turn_right.wav']}),
+    turnLeft: new Howl({
+        src: ['sounds/player/turn_left.wav'],
+        onload: function() { console.log('turn_left.wav loaded'); },
+        onloaderror: function(id, error) { console.error('Failed to load turn_left.wav:', error); }
+    }),
+    turnRight: new Howl({
+        src: ['sounds/player/turn_right.wav'],
+        onload: function() { console.log('turn_right.wav loaded'); },
+        onloaderror: function(id, error) { console.error('Failed to load turn_right.wav:', error); }
+    }),
     
     // Item sounds
     coinCollect: new Howl({
@@ -123,13 +131,9 @@ function handleKeyPress(e) {
 }
 
 function updateAllObstacleSounds() {
-    console.log('Updating all obstacle sounds. Player lane:', gameState.playerLane);
-    
     // When player moves, update which sound file plays for each obstacle
     gameState.obstacles.forEach(obstacle => {
         if (!obstacle.soundId || obstacle.type === 'coin') return;
-        
-        console.log(`Obstacle: type=${obstacle.type}, lane=${obstacle.lane}, soundId=${obstacle.soundId}`);
         
         // Get current sound name and stop it
         const oldSoundName = getSoundNameForObstacle(obstacle);
@@ -139,7 +143,6 @@ function updateAllObstacleSounds() {
         
         // Calculate relative position
         const relativeLane = obstacle.lane - gameState.playerLane;
-        console.log(`Relative lane: ${relativeLane}`);
         let newSound;
         
         if (obstacle.type === 'cane') {
