@@ -16,8 +16,8 @@ let gameState = {
 const sounds = {
     // Player sounds
     jump: null, // new Howl({src: ['sounds/player/jump.mp3']}),
-    turnLeft: null, // new Howl({src: ['sounds/player/turn_left.mp3']}),
-    turnRight: null, // new Howl({src: ['sounds/player/turn_right.mp3']}),
+    turnLeft: new Howl({src: ['sounds/player/turn_left.wav']}),
+    turnRight: new Howl({src: ['sounds/player/turn_right.wav']}),
     
     // Item sounds
     coinCollect: new Howl({
@@ -168,7 +168,7 @@ function playSound(soundName) {
 function gameLoop() {
     if (!gameState.running) return;
     
-    const currentTime = Date.now();
+const currentTime = Date.now();
     
     // Spawn new obstacles
     if (currentTime - gameState.lastObstacleSpawn > gameState.spawnInterval / gameState.speed) {
