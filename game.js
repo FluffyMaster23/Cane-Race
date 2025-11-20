@@ -102,6 +102,7 @@ function handleKeyPress(e) {
             if (gameState.playerLane > 0) {
                 gameState.playerLane--;
                 playSound('turnLeft');
+                updateAllObstacleSounds();
             }
             break;
             
@@ -110,6 +111,7 @@ function handleKeyPress(e) {
             if (gameState.playerLane < 2) {
                 gameState.playerLane++;
                 playSound('turnRight');
+                updateAllObstacleSounds();
             }
             break;
             
@@ -118,6 +120,48 @@ function handleKeyPress(e) {
             playSound('jump');
             break;
     }
+}
+
+function updateAllObstacleSounds() {
+    // When player moves, update which sound file plays for each obstacle
+    gameState.obstacles.forEach(obstacle => {
+        if (!obstacle.soundId || obstacle.type === 'coin') return;
+        
+        // Stop current sound
+        const oldSoundName = getSoundNameForObstacle(obstacle);
+        if (oldSoundName && sounds[oldSoundName]) {
+            const currentVolume = sounds[oldSoundName].volume(obstacle.soundId);
+            sounds[oldSoundName].stop(obstacle.soundId);
+            
+            // Get new sound based on relative position
+            const relativeLane = obstacle.lane - gameState.playerLane;
+            let newSound;
+            
+            if (obstacle.type === 'cane') {
+                if (relativeLane === -1) {
+                    newSound = sounds.caneConcreteleft;
+                } else if (relativeLane === 0) {
+                    newSound = sounds.caneConcretecenter;
+                } else if (relativeLane === 1) {
+                    newSound = sounds.caneConcreteright;
+                }
+            } else if (obstacle.type === 'skateboard') {
+                if (relativeLane === -1) {
+                    newSound = sounds.skateboardLeft;
+                } else if (relativeLane === 0) {
+                    newSound = sounds.skateboardCenter;
+                } else if (relativeLane === 1) {
+                    newSound = sounds.skateboardRight;
+                }
+            }
+            
+            // Play new sound with same volume
+            if (newSound) {
+                obstacle.soundId = newSound.play();
+                newSound.volume(currentVolume, obstacle.soundId);
+            }
+        }
+    });
 }
 
 function updateSingleObstacleSound(obstacle) {
