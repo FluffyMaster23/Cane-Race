@@ -195,11 +195,7 @@ function updateSingleObstacleSound(obstacle) {
 
 function playSound(soundName) {
     if (sounds[soundName] && sounds[soundName] !== null) {
-        console.log(`Playing sound: ${soundName}, state: ${sounds[soundName].state()}`);
-        const playId = sounds[soundName].play();
-        console.log(`Sound ${soundName} play ID: ${playId}`);
-    } else {
-        console.log(`Sound ${soundName} not available or is null`);
+        sounds[soundName].play();
     }
 }
 
