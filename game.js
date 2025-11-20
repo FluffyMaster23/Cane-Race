@@ -33,14 +33,14 @@ const sounds = {
     
     // Obstacle sounds with spatial audio enabled
     caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], stereo: true}),
-    caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav']}),
-    caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav']}),
-caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav']}),
-caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav']}),
-caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav']}),
+    caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav'], stereo: true}),
+    caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav'], stereo: true}),
+caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav'], stereo: true}),
+caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav'], stereo: true}),
+caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav'], stereo: true}),
 skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], stereo: true}),
-skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav']}),
-skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav']}),
+skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], stereo: true}),
+skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], stereo: true}),
 
     caneHit: null, // new Howl({src: ['sounds/cane/hit.mp3']}),
     skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav']}),
@@ -213,24 +213,32 @@ function spawnObstacle() {
     
     // Play obstacle approach sound based on lane and store sound ID
     if (obstacleType === 'cane') {
-        // Calculate initial panning before playing
-        const relativeLane = obstacle.lane - gameState.playerLane;
-        const initialPan = relativeLane * 0.7;
+        // Select sound based on lane
+        let caneSound;
+        if (lane === 0) {
+            caneSound = sounds.caneConcreteleft;
+        } else if (lane === 1) {
+            caneSound = sounds.caneConcretecenter;
+        } else {
+            caneSound = sounds.caneConcreteright;
+        }
         
-        // Play with initial panning using pos()
-        obstacle.soundId = sounds.caneConcretecenter.play();
-        sounds.caneConcretecenter.pos(initialPan, 0, -1, obstacle.soundId);
+        obstacle.soundId = caneSound.play();
         
         // Set initial volume
         updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'skateboard') {
-        // Calculate initial panning before playing
-        const relativeLane = obstacle.lane - gameState.playerLane;
-        const initialPan = relativeLane * 0.7;
+        // Select sound based on lane
+        let skateboardSound;
+        if (lane === 0) {
+            skateboardSound = sounds.skateboardLeft;
+        } else if (lane === 1) {
+            skateboardSound = sounds.skateboardCenter;
+        } else {
+            skateboardSound = sounds.skateboardRight;
+        }
         
-        // Play with initial panning using pos()
-        obstacle.soundId = sounds.skateboardCenter.play();
-        sounds.skateboardCenter.pos(initialPan, 0, -1, obstacle.soundId);
+        obstacle.soundId = skateboardSound.play();
         
         // Set initial volume
         updateSingleObstacleSound(obstacle);
