@@ -31,16 +31,16 @@ const sounds = {
         }
     }),
     
-    // Obstacle sounds - no initial panning, will be set dynamically
-    caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], volume: 0}),
-    caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav'], volume: 0}),
-    caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav'], volume: 0}),
-caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav'], volume: 0}),
-caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav'], volume: 0}),
-caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav'], volume: 0}),
-skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], volume: 0}),
-skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], volume: 0}),
-skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], volume: 0}),
+    // Obstacle sounds - stereo enabled for panning
+    caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav']}),
+    caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav']}),
+    caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav']}),
+caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav']}),
+caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav']}),
+caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav']}),
+skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav']}),
+skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav']}),
+skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav']}),
 
     caneHit: null, // new Howl({src: ['sounds/cane/hit.mp3']}),
     skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav']}),
