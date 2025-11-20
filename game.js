@@ -154,6 +154,11 @@ function updateSingleObstacleSound(obstacle) {
     let panValue = relativeLane * 1.0; // -1 (left), 0 (center), 1 (right)
     panValue = Math.max(-1, Math.min(1, panValue)); // Clamp to -1 to 1
     
+    // Debug: log when panning changes
+    if (Math.abs(panValue) > 0) {
+        console.log(`Panning ${obstacle.type} to ${panValue} (Lane: ${obstacle.lane}, Player: ${gameState.playerLane})`);
+    }
+    
     // Apply volume and panning
     sounds[soundName].volume(volume, obstacle.soundId);
     sounds[soundName].stereo(panValue, obstacle.soundId);
