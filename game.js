@@ -31,14 +31,14 @@ const sounds = {
         }
     }),
     
-    // Obstacle sounds - stereo enabled for panning
-    caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav']}),
+    // Obstacle sounds with spatial audio enabled
+    caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], stereo: true}),
     caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav']}),
     caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav']}),
 caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav']}),
 caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav']}),
 caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav']}),
-skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav']}),
+skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], stereo: true}),
 skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav']}),
 skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav']}),
 
@@ -150,13 +150,13 @@ function updateSingleObstacleSound(obstacle) {
         volume = Math.max(0, 1 + (obstacle.distance / 10));
     }
     
-    // Panning based on relative lane: -0.7 to 0.7 for smoother stereo
+    // Panning based on relative lane using pos() for spatial audio
     let panValue = relativeLane * 0.7; // -0.7 (left), 0 (center), 0.7 (right)
     panValue = Math.max(-1, Math.min(1, panValue)); // Clamp to -1 to 1
     
-    // Apply volume and panning
+    // Apply volume and 3D position (x, y, z) where x is left/right
     sounds[soundName].volume(volume, obstacle.soundId);
-    sounds[soundName].stereo(panValue, obstacle.soundId);
+    sounds[soundName].pos(panValue, 0, -1, obstacle.soundId);
 }
 
 function playSound(soundName) {
@@ -217,9 +217,9 @@ function spawnObstacle() {
         const relativeLane = obstacle.lane - gameState.playerLane;
         const initialPan = relativeLane * 0.7;
         
-        // Play with initial panning
+        // Play with initial panning using pos()
         obstacle.soundId = sounds.caneConcretecenter.play();
-        sounds.caneConcretecenter.stereo(initialPan, obstacle.soundId);
+        sounds.caneConcretecenter.pos(initialPan, 0, -1, obstacle.soundId);
         
         // Set initial volume
         updateSingleObstacleSound(obstacle);
@@ -228,9 +228,9 @@ function spawnObstacle() {
         const relativeLane = obstacle.lane - gameState.playerLane;
         const initialPan = relativeLane * 0.7;
         
-        // Play with initial panning
+        // Play with initial panning using pos()
         obstacle.soundId = sounds.skateboardCenter.play();
-        sounds.skateboardCenter.stereo(initialPan, obstacle.soundId);
+        sounds.skateboardCenter.pos(initialPan, 0, -1, obstacle.soundId);
         
         // Set initial volume
         updateSingleObstacleSound(obstacle);
