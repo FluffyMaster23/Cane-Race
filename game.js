@@ -51,7 +51,7 @@ skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], lo
 skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], loop: false}),
 skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], loop: false}),
     
-    caneHit: new Howl({src: ['sounds/cane/caneHit.wav']}),
+    caneHit: new Howl({src: ['sounds/player/caneHit.wav']}),
     skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav']}),
     
     // Game sounds
