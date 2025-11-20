@@ -130,10 +130,16 @@ function updateObstaclePanning() {
 }
 
 function updateSingleObstacleSound(obstacle) {
-    if (!obstacle.soundId) return;
+    if (!obstacle.soundId) {
+        console.log('No soundId for obstacle:', obstacle.type);
+        return;
+    }
     
     const soundName = getSoundNameForObstacle(obstacle);
-    if (!soundName || !sounds[soundName]) return;
+    if (!soundName || !sounds[soundName]) {
+        console.log('No sound for obstacle:', obstacle.type, 'soundName:', soundName);
+        return;
+    }
     
     // Calculate relative lane position
     const relativeLane = obstacle.lane - gameState.playerLane;
@@ -153,6 +159,8 @@ function updateSingleObstacleSound(obstacle) {
     // Panning based on relative lane: full stereo separation
     let panValue = relativeLane * 1.0; // -1 (left), 0 (center), 1 (right)
     panValue = Math.max(-1, Math.min(1, panValue)); // Clamp to -1 to 1
+    
+    console.log('Updating sound:', obstacle.type, 'Lane:', obstacle.lane, 'PlayerLane:', gameState.playerLane, 'Pan:', panValue, 'Volume:', volume);
     
     // Apply volume and panning
     sounds[soundName].volume(volume, obstacle.soundId);
