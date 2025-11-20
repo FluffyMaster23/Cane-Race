@@ -102,7 +102,7 @@ function handleKeyPress(e) {
             if (gameState.playerLane > 0) {
                 gameState.playerLane--;
                 playSound('turnLeft');
-                updateObstaclePanning(); // Update panning when player moves
+                switchObstacleSounds(); // Switch sounds when player moves
             }
             break;
             
@@ -111,7 +111,7 @@ function handleKeyPress(e) {
             if (gameState.playerLane < 2) {
                 gameState.playerLane++;
                 playSound('turnRight');
-                updateObstaclePanning(); // Update panning when player moves
+                switchObstacleSounds(); // Switch sounds when player moves
             }
             break;
             
@@ -122,10 +122,44 @@ function handleKeyPress(e) {
     }
 }
 
-function updateObstaclePanning() {
-    // Update stereo panning and volume for all active obstacles based on player position and distance
+function switchObstacleSounds() {
+    // When player changes lanes, switch to the appropriate sound file for each obstacle
     gameState.obstacles.forEach(obstacle => {
-        updateSingleObstacleSound(obstacle);
+        if (!obstacle.soundId || obstacle.type === 'coin') return;
+        
+        // Stop the current sound
+        const oldSoundName = getSoundNameForObstacle(obstacle);
+        if (oldSoundName && sounds[oldSoundName]) {
+            sounds[oldSoundName].stop(obstacle.soundId);
+        }
+        
+        // Get the new sound name based on relative position
+        const relativeLane = obstacle.lane - gameState.playerLane;
+        let newSoundName;
+        
+        if (obstacle.type === 'cane') {
+            if (relativeLane === -1) {
+                newSoundName = 'caneConcreteleft';
+            } else if (relativeLane === 0) {
+                newSoundName = 'caneConcretecenter';
+            } else {
+                newSoundName = 'caneConcreteright';
+            }
+        } else if (obstacle.type === 'skateboard') {
+            if (relativeLane === -1) {
+                newSoundName = 'skateboardLeft';
+            } else if (relativeLane === 0) {
+                newSoundName = 'skateboardCenter';
+            } else {
+                newSoundName = 'skateboardRight';
+            }
+        }
+        
+        // Play the new sound and update the soundId
+        if (newSoundName && sounds[newSoundName]) {
+            obstacle.soundId = sounds[newSoundName].play();
+            updateSingleObstacleSound(obstacle);
+        }
     });
 }
 
@@ -134,9 +168,6 @@ function updateSingleObstacleSound(obstacle) {
     
     const soundName = getSoundNameForObstacle(obstacle);
     if (!soundName || !sounds[soundName]) return;
-    
-    // Calculate relative lane position
-    const relativeLane = obstacle.lane - gameState.playerLane;
     
     // Distance-based volume: louder as it gets closer (0-100 distance)
     // At distance 100: very quiet (0.05)
@@ -150,13 +181,8 @@ function updateSingleObstacleSound(obstacle) {
         volume = Math.max(0, 1 + (obstacle.distance / 10));
     }
     
-    // Panning based on relative lane using pos() for spatial audio
-    let panValue = relativeLane * 0.7; // -0.7 (left), 0 (center), 0.7 (right)
-    panValue = Math.max(-1, Math.min(1, panValue)); // Clamp to -1 to 1
-    
-    // Apply volume and 3D position (x, y, z) where x is left/right
+    // Apply volume
     sounds[soundName].volume(volume, obstacle.soundId);
-    sounds[soundName].pos(panValue, 0, -1, obstacle.soundId);
 }
 
 function playSound(soundName) {
