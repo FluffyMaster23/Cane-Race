@@ -213,15 +213,13 @@ function spawnObstacle() {
     
     // Play obstacle approach sound based on lane and store sound ID
     if (obstacleType === 'cane') {
-        const laneSounds = ['caneConcreteleft', 'caneConcretecenter', 'caneConcreteright'];
-        const soundName = laneSounds[lane];
-        obstacle.soundId = sounds[soundName].play();
+        // Always use center sound and pan it dynamically
+        obstacle.soundId = sounds.caneConcretecenter.play();
         // Set initial volume and panning
         updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'skateboard') {
-        const laneSounds = ['skateboardLeft', 'skateboardCenter', 'skateboardRight'];
-        const soundName = laneSounds[lane];
-        obstacle.soundId = sounds[soundName].play();
+        // Always use center sound and pan it dynamically
+        obstacle.soundId = sounds.skateboardCenter.play();
         // Set initial volume and panning
         updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'coin') {
@@ -277,11 +275,9 @@ function moveObstacles() {
 
 function getSoundNameForObstacle(obstacle) {
     if (obstacle.type === 'cane') {
-        const laneSounds = ['caneConcreteleft', 'caneConcretecenter', 'caneConcreteright'];
-        return laneSounds[obstacle.lane];
+        return 'caneConcretecenter'; // Always use center sound with dynamic panning
     } else if (obstacle.type === 'skateboard') {
-        const laneSounds = ['skateboardLeft', 'skateboardCenter', 'skateboardRight'];
-        return laneSounds[obstacle.lane];
+        return 'skateboardCenter'; // Always use center sound with dynamic panning
     }
     // Coins have no sound until collected
     return null;
