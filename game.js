@@ -8,7 +8,7 @@ let gameState = {
     baseSpeed: 150, // Base speed in ms for obstacle movement - moderate pace
     obstacles: [], // Array of {type: 'cane'|'skateboard'|'coin', lane: 0-2, distance: number, coinAmount: number}
     lastObstacleSpawn: 0,
-    spawnInterval: 2500, // Spawn obstacles every 2.5 seconds at level 1
+    spawnInterval: 2800, // Spawn obstacles every 2.5 seconds at level 1
     animationFrame: null
 };
 
@@ -90,7 +90,7 @@ function startGame() {
     // Start game loop
     gameLoop();
     
-    updateStatus("Game started! Use arrow keys to play. Score: 0, Level: 1");
+    updateStatus("Game started!");
 }
 
 function handleKeyPress(e) {
@@ -150,8 +150,8 @@ function updateSingleObstacleSound(obstacle) {
         volume = Math.max(0, 1 + (obstacle.distance / 10));
     }
     
-    // Panning based on relative lane: -0.7 to 0.7 for smoother stereo
-    let panValue = relativeLane * 0.7; // -0.7 (left), 0 (center), 0.7 (right)
+    // Panning based on relative lane: full stereo separation
+    let panValue = relativeLane * 1.0; // -1 (left), 0 (center), 1 (right)
     panValue = Math.max(-1, Math.min(1, panValue)); // Clamp to -1 to 1
     
     // Apply volume and panning
@@ -322,7 +322,7 @@ function checkCollisions() {
 }
 
 function checkLevelUp() {
-    const newLevel = Math.floor(gameState.score / 10) + 1;
+    const newLevel = Math.floor(gameState.score / 60) + 1;
     
     if (newLevel > gameState.level) {
         gameState.level = newLevel;
