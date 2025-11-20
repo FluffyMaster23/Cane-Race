@@ -213,14 +213,26 @@ function spawnObstacle() {
     
     // Play obstacle approach sound based on lane and store sound ID
     if (obstacleType === 'cane') {
-        // Always use center sound and pan it dynamically
+        // Calculate initial panning before playing
+        const relativeLane = obstacle.lane - gameState.playerLane;
+        const initialPan = relativeLane * 0.7;
+        
+        // Play with initial panning
         obstacle.soundId = sounds.caneConcretecenter.play();
-        // Set initial volume and panning
+        sounds.caneConcretecenter.stereo(initialPan, obstacle.soundId);
+        
+        // Set initial volume
         updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'skateboard') {
-        // Always use center sound and pan it dynamically
+        // Calculate initial panning before playing
+        const relativeLane = obstacle.lane - gameState.playerLane;
+        const initialPan = relativeLane * 0.7;
+        
+        // Play with initial panning
         obstacle.soundId = sounds.skateboardCenter.play();
-        // Set initial volume and panning
+        sounds.skateboardCenter.stereo(initialPan, obstacle.soundId);
+        
+        // Set initial volume
         updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
