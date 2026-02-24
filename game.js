@@ -370,8 +370,6 @@ function checkCollisions() {
             // Canes and skateboards hit at distance 2
             if ((obstacle.type === 'cane' || obstacle.type === 'skateboard') && obstacle.distance <= 2 && obstacle.distance >= -2) {
                 // Hit by cane or skateboard - game over
-                const hitSound = obstacle.type === 'cane' ? 'caneHit' : 'skateboardHit';
-                playSound(hitSound);
                 endGame(obstacle.type);
                 return;
             }
@@ -399,15 +397,35 @@ function endGame(hitBy) {
     // Stop footstep sounds
     stopFootsteps();
     
-    // Stop all obstacle sounds including coin loops
+    // Fade out obstacle sounds so death audio is clear
+    const obstacleFadeDuration = 700;
     gameState.obstacles.forEach(obstacle => {
         if (obstacle.soundId) {
             const soundName = getSoundNameForObstacle(obstacle);
             if (soundName && sounds[soundName]) {
-                sounds[soundName].stop(obstacle.soundId);
+                const obstacleSound = sounds[soundName];
+                const currentVolume = obstacleSound.volume(obstacle.soundId);
+                obstacleSound.once('fade', function() {
+                    obstacleSound.stop(obstacle.soundId);
+                }, obstacle.soundId);
+                obstacleSound.fade(currentVolume, 0, obstacleFadeDuration, obstacle.soundId);
             }
         }
     });
+
+    const hitSound = hitBy === 'cane' ? sounds.caneHit : sounds.skateboardHit;
+    if (hitSound) {
+        hitSound.stop();
+        const hitSoundId = hitSound.play();
+
+        if (sounds.gameOver) {
+            hitSound.once('end', function() {
+                sounds.gameOver.play();
+            }, hitSoundId);
+        }
+    } else if (sounds.gameOver) {
+        sounds.gameOver.play();
+    }
     
     // Play game over sound later when implemented
     // playSound('gameOver');
