@@ -190,6 +190,10 @@ function updateSingleObstacleSound(obstacle) {
         // Fading out after passing
         volume = Math.max(0, 1 + (obstacle.distance / 10));
     }
+
+    if (obstacle.type === 'skateboard') {
+        volume = Math.min(1, volume * 1.35);
+    }
     
     // Apply volume
     sounds[soundName].volume(volume, obstacle.soundId);
@@ -404,9 +408,6 @@ function endGame(hitBy) {
             }
         }
     });
-    
-    // Stop ALL sounds using Howler
-    Howler.stop();
     
     // Play game over sound later when implemented
     // playSound('gameOver');
