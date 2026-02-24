@@ -167,6 +167,7 @@ function updateAllObstacleSounds() {
         // Play new sound and update volume based on distance
         if (newSound) {
             obstacle.soundId = newSound.play();
+            newSound.loop(false, obstacle.soundId);
             updateSingleObstacleSound(obstacle);
         }
     });
@@ -259,6 +260,7 @@ function spawnObstacle() {
         }
         
         obstacle.soundId = caneSound.play();
+        caneSound.loop(false, obstacle.soundId);
         
         // Set initial volume
         updateSingleObstacleSound(obstacle);
@@ -274,6 +276,7 @@ function spawnObstacle() {
         }
         
         obstacle.soundId = skateboardSound.play();
+        skateboardSound.loop(false, obstacle.soundId);
         
         // Set initial volume
         updateSingleObstacleSound(obstacle);
