@@ -12,6 +12,13 @@ let gameState = {
     animationFrame: null
 };
 
+const audioMix = {
+    skateboardApproachBoost: 1.35,
+    skateboardApproachBaseVolume: 0.95,
+    caneHitVolume: 1.0,
+    skateboardHitVolume: 1.0
+};
+
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
 const sounds = {
     // Player sounds
@@ -47,12 +54,12 @@ const sounds = {
 caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav'], loop: false}),
 caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav'], loop: false}),
 caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav'], loop: false}),
-skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], loop: false}),
-skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], loop: false}),
-skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], loop: false}),
+skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume}),
+skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume}),
+skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume}),
     
-    caneHit: new Howl({src: ['sounds/player/caneHit.wav']}),
-    skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav']}),
+    caneHit: new Howl({src: ['sounds/player/caneHit.wav'], volume: audioMix.caneHitVolume}),
+    skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav'], volume: audioMix.skateboardHitVolume}),
     
     // Game sounds
     levelUp: null, // new Howl({src: ['sounds/level_up.mp3']}),
@@ -192,7 +199,7 @@ function updateSingleObstacleSound(obstacle) {
     }
 
     if (obstacle.type === 'skateboard') {
-        volume = Math.min(1, volume * 1.35);
+        volume = Math.min(1, volume * audioMix.skateboardApproachBoost);
     }
     
     // Apply volume
