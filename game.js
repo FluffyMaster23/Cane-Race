@@ -9,15 +9,21 @@ let gameState = {
     obstacles: [], // Array of {type: 'cane'|'skateboard'|'coin', lane: 0-2, distance: number, coinAmount: number}
     lastObstacleSpawn: 0,
     spawnInterval: 2500, // Spawn obstacles every 2.5 seconds at level 1
-    animationFrame: null
+    animationFrame: null,
+    stunnedUntil: 0,
+    onCarId: null
 };
 
 const audioMix = {
     skateboardApproachBoost: 1.35,
     skateboardApproachBaseVolume: 0.95,
     caneHitVolume: 1.0,
-    skateboardHitVolume: 1.0
+    skateboardHitVolume: 1.0,
+    carJumpBonus: 10
 };
+
+let nextObstacleId = 1;
+let stunRecoveryTimeout = null;
 
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
 const sounds = {
@@ -50,6 +56,8 @@ skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], loop
     
     caneHit: new Howl({src: ['sounds/player/caneHit.wav'], volume: audioMix.caneHitVolume}),
     skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav'], volume: audioMix.skateboardHitVolume}),
+    carApproach: null,
+    carStep: null,
     
     // Game sounds
     levelUp: null, // new Howl({src: ['sounds/level_up.mp3']}),
@@ -84,8 +92,16 @@ function startGame() {
         obstacles: [],
         lastObstacleSpawn: Date.now(),
         spawnInterval: 2000,
-        animationFrame: null
+        animationFrame: null,
+        stunnedUntil: 0,
+        onCarId: null
     };
+
+    nextObstacleId = 1;
+    if (stunRecoveryTimeout) {
+        clearTimeout(stunRecoveryTimeout);
+        stunRecoveryTimeout = null;
+    }
     
     // Set up keyboard controls (avoid duplicate listeners on replay)
     document.removeEventListener('keydown', handleKeyPress);
@@ -106,6 +122,7 @@ function handleKeyPress(e) {
     switch(e.key) {
         case 'ArrowLeft':
             e.preventDefault();
+            if (isStunned()) return;
             if (gameState.playerLane > 0) {
                 gameState.playerLane--;
                 playSound('turnLeft');
@@ -115,6 +132,7 @@ function handleKeyPress(e) {
             
         case 'ArrowRight':
             e.preventDefault();
+            if (isStunned()) return;
             if (gameState.playerLane < 2) {
                 gameState.playerLane++;
                 playSound('turnRight');
@@ -125,14 +143,55 @@ function handleKeyPress(e) {
         case 'ArrowUp':
             e.preventDefault();
             playSound('jump');
+            movePlayerForward(2);
+            tryJumpOffCar();
             break;
+    }
+}
+
+function isStunned() {
+    return Date.now() < gameState.stunnedUntil;
+}
+
+function movePlayerForward(steps) {
+    if (!gameState.running || steps <= 0) return;
+
+    for (const obstacle of gameState.obstacles) {
+        obstacle.distance -= steps;
+        updateSingleObstacleSound(obstacle);
+    }
+
+    checkCollisions();
+}
+
+function tryJumpOffCar() {
+    if (gameState.onCarId === null) return;
+
+    const carObstacle = gameState.obstacles.find(obstacle => obstacle.id === gameState.onCarId && obstacle.type === 'car');
+    if (!carObstacle) {
+        gameState.onCarId = null;
+        return;
+    }
+
+    const inJumpWindow = carObstacle.distance <= 2 && carObstacle.distance >= -1;
+    if (inJumpWindow) {
+        carObstacle.carJumped = true;
+        gameState.onCarId = null;
+        gameState.score += audioMix.carJumpBonus;
+        updateStatus(`Jumped off the car! +${audioMix.carJumpBonus} points. Score: ${gameState.score}`);
+        checkLevelUp();
+    } else {
+        carObstacle.carJumped = false;
+        gameState.onCarId = null;
+        carObstacle.distance = -6;
+        fallFromCar();
     }
 }
 
 function updateAllObstacleSounds() {
     // When player moves, update which sound file plays for each obstacle
     gameState.obstacles.forEach(obstacle => {
-        if (!obstacle.soundId || obstacle.type === 'coin') return;
+        if (!obstacle.soundId || obstacle.type === 'coin' || obstacle.type === 'car') return;
         
         // Get current sound name and stop it
         const oldSoundName = obstacle.soundKey || getSoundNameForObstacle(obstacle);
@@ -229,24 +288,29 @@ function spawnObstacle() {
     const random = Math.random();
     let obstacleType;
     
-    // 40% cane, 30% skateboard, 30% coin
-    if (random < 0.4) {
+    // 30% cane, 25% skateboard, 30% coin, 15% standing car
+    if (random < 0.30) {
         obstacleType = 'cane';
-    } else if (random < 0.7) {
+    } else if (random < 0.55) {
         obstacleType = 'skateboard';
-    } else {
+    } else if (random < 0.85) {
         obstacleType = 'coin';
+    } else {
+        obstacleType = 'car';
     }
     
     const lane = Math.floor(Math.random() * 3); // Random lane 0-2
     
     const obstacle = {
+        id: nextObstacleId++,
         type: obstacleType,
         lane: lane,
         distance: 100, // Start at distance 100, moves toward 0 (player is at 0)
         coinAmount: obstacleType === 'coin' ? Math.floor(Math.random() * 1000) + 1 : 0,
         soundId: null, // Store the sound ID for this obstacle
-        soundKey: null
+        soundKey: null,
+        carJumped: false,
+        dodgeGraceApplied: false
     };
     
     gameState.obstacles.push(obstacle);
@@ -288,6 +352,11 @@ function spawnObstacle() {
         updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
+    } else if (obstacleType === 'car') {
+        if (sounds.carApproach) {
+            obstacle.soundId = sounds.carApproach.play();
+            obstacle.soundKey = 'carApproach';
+        }
     }
 }
 
@@ -331,11 +400,36 @@ function moveObstacles() {
                 updateStatus(`Avoided cane! +1 point. Score: ${gameState.score}`);
             }
             // Note: Coins don't give points for avoiding, only for collecting
+
+            if (obstacle.type === 'car' && gameState.onCarId === obstacle.id && !obstacle.carJumped) {
+                gameState.onCarId = null;
+                fallFromCar();
+            }
             
             gameState.obstacles.splice(i, 1);
             checkLevelUp();
         }
     }
+}
+
+function fallFromCar() {
+    if (!gameState.running) return;
+
+    gameState.stunnedUntil = Date.now() + 3000;
+    updateStatus('You just fell down from a car!');
+    announceToScreenReader('You just fell down from a car! Stunned for 3 seconds.');
+    stopFootsteps();
+
+    if (stunRecoveryTimeout) {
+        clearTimeout(stunRecoveryTimeout);
+    }
+
+    stunRecoveryTimeout = setTimeout(() => {
+        if (gameState.running && !isStunned()) {
+            playFootsteps();
+            updateStatus('Recovered from stun. Keep moving!');
+        }
+    }, 3050);
 }
 
 function getSoundKeyFromInstance(soundInstance) {
@@ -352,6 +446,8 @@ function getSoundNameForObstacle(obstacle) {
         return 'caneConcretecenter'; // Always use center sound with dynamic panning
     } else if (obstacle.type === 'skateboard') {
         return 'skateboardCenter'; // Always use center sound with dynamic panning
+    } else if (obstacle.type === 'car') {
+        return 'carApproach';
     }
     // Coins have no sound until collected
     return null;
@@ -360,6 +456,12 @@ function getSoundNameForObstacle(obstacle) {
 function checkCollisions() {
     for (let i = gameState.obstacles.length - 1; i >= 0; i--) {
         const obstacle = gameState.obstacles[i];
+
+        if (obstacle.type === 'car' && obstacle.distance <= 2 && obstacle.distance >= -2 && gameState.onCarId === null) {
+            gameState.onCarId = obstacle.id;
+            updateStatus('You are on a standing car! Press Up at the right time to jump off.');
+            continue;
+        }
         
         // Check if obstacle is at player position and in same lane
         if (obstacle.lane === gameState.playerLane) {
@@ -409,6 +511,12 @@ function checkLevelUp() {
 function endGame(hitBy) {
     gameState.running = false;
     clearTimeout(gameState.animationFrame);
+    gameState.onCarId = null;
+    gameState.stunnedUntil = 0;
+    if (stunRecoveryTimeout) {
+        clearTimeout(stunRecoveryTimeout);
+        stunRecoveryTimeout = null;
+    }
     
     // Stop footstep sounds
     stopFootsteps();
