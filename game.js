@@ -636,7 +636,10 @@ function stopFootsteps() {
     if (footstepInterval) {
         clearInterval(footstepInterval);
         footstepInterval = null;
-    }                   
+    }
+    if (sounds.playerSteps1) sounds.playerSteps1.stop();
+    if (sounds.playerSteps2) sounds.playerSteps2.stop();
+    if (sounds.playerSteps3) sounds.playerSteps3.stop();
     currentFootstepIndex = 0;
 }
 
@@ -692,6 +695,9 @@ function stopCarRoofSteps() {
         clearInterval(carStepInterval);
         carStepInterval = null;
     }
+    if (sounds.carStep1) sounds.carStep1.stop();
+    if (sounds.carStep2) sounds.carStep2.stop();
+    if (sounds.carStep3) sounds.carStep3.stop();
 }
 
 function stopStepAudioLoops() {
