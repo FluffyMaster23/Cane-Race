@@ -93,7 +93,7 @@ function startGame() {
         playerLane: 1,
         score: 0,
         level: 1,
-        speed: 2,
+        speed: 1,
         baseSpeed: 150,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
