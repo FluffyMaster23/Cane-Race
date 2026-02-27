@@ -8,7 +8,7 @@ let gameState = {
     baseSpeed: 150, // Base speed in ms for obstacle movement - moderate pace
     obstacles: [], // Array of {type: 'cane'|'skateboard'|'coin', lane: 0-2, distance: number, coinAmount: number}
     lastObstacleSpawn: 0,
-    spawnInterval: 2500, // Spawn obstacles every 2.5 seconds at level 1
+    spawnInterval: 25000, // Spawn obstacles every 2.5 seconds at level 1
     animationFrame: null,
     stunnedUntil: 0,
     onCarId: null
@@ -28,12 +28,13 @@ let stunRecoveryTimeout = null;
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
 const sounds = {
     // Player sounds
-    jump: null, // new Howl({src: ['sounds/player/jump.mp3']}),
-    turnLeft: new Howl({
-        src: ['sounds/player/turn_left.wav'],
+    jump: new Howl({src: ['sounds/player/jump.wav']}),
+    turnLeft: new Howl({src:['sounds/player/turn_left.wav'],
     }),
-    turnRight: new Howl({
-        src: ['sounds/player/turn_right.wav'],
+    turnRight: new Howl({src: ['sounds/player/turn_right.wav'],
+    }),
+    turnCenter: new Howl({src:['sounds/player/turn_center.wav'],
+
     }),
 
     // Item sounds
@@ -54,7 +55,7 @@ skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], lo
 skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume}),
 skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume}),
     
-    caneHit: new Howl({src: ['sounds/player/caneHit.wav'], volume: audioMix.caneHitVolume}),
+    caneHit: new Howl({src: ['sounds/player/caneHit.wav'],}),
     skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav'], volume: audioMix.skateboardHitVolume}),
     carStep1: new Howl({src: ['sounds/car/carstep1.wav'], loop: false}),
     carStep2: new Howl({src: ['sounds/car/carstep2.wav'], loop: false}),
@@ -90,7 +91,7 @@ function startGame() {
         playerLane: 1,
         score: 0,
         level: 1,
-        speed: 1,
+        speed: 3,
         baseSpeed: 100,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
@@ -138,7 +139,11 @@ function handleKeyPress(e) {
             if (isStunned()) return;
             if (gameState.playerLane < 2) {
                 gameState.playerLane++;
-                playSound('turnRight');
+                if (gameState.playerLane === 1) {
+                    playSound('turnCenter');
+                } else {
+                    playSound('turnRight');
+                }
                 updateAllObstacleSounds();
             }
             break;
