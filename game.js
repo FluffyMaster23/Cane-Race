@@ -3,6 +3,7 @@ let gameState = {
     running: false,
     playerLane: 1, // 0 = left, 1 = middle, 2 = right
     score: 0,
+    coinProgress: 0,
     level: 1,
     speed: 1,
     baseSpeed: 150, // Base speed in ms for obstacle movement - moderate pace
@@ -92,6 +93,7 @@ function startGame() {
         running: true,
         playerLane: 1,
         score: 0,
+        coinProgress: 0,
         level: 1,
         speed: 1,
         baseSpeed: 130,
@@ -506,6 +508,7 @@ function checkCollisions() {
             if (obstacle.type === 'coin' && obstacle.distance <= 1 && obstacle.distance >= -1) {
                 // Collect coin
                 gameState.score += obstacle.coinAmount;
+                gameState.coinProgress += obstacle.coinAmount;
                 
                 // Remove from obstacles array
                 gameState.obstacles.splice(i, 1);
@@ -528,7 +531,7 @@ function checkCollisions() {
 }
 
 function checkLevelUp() {
-    const newLevel = Math.floor(gameState.score / 60) + 1;
+    const newLevel = Math.floor(gameState.coinProgress / 60) + 1;
     
     if (newLevel > gameState.level) {
         gameState.level = newLevel;
