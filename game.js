@@ -29,56 +29,57 @@ let stunRecoveryTimeout = null;
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
 const sounds = {
     // Player sounds
-    jump: new Howl({src: ['sounds/player/jump.wav']}),
-    turnLeft: new Howl({src:['sounds/player/turn_left.wav'],
-    }),
-    turnRight: new Howl({src: ['sounds/player/turn_right.wav'],
-    }),
-    turnCenter: new Howl({src:['sounds/player/turn_center.wav'],
-
-    }),
+    jump: new Howl({ src: ['sounds/player/jump.wav'] }),
+    turnLeft: new Howl({ src: ['sounds/player/turn_left.wav'] }),
+    turnRight: new Howl({ src: ['sounds/player/turn_right.wav'] }),
+    turnCenter: new Howl({ src: ['sounds/player/turn_center.wav'] }),
 
     // Item sounds
     coinCollect: new Howl({
         src: ['sounds/items/coin/pickupcoin.wav'], 
         volume: 1.0
     }),
-    coinLoop: new Howl({src: ['sounds/items/coin/coin.wav'], loop: true}),
+    coinLoop: new Howl({ src: ['sounds/items/coin/coin.wav'], loop: true }),
     
     // Obstacle sounds - left/center/right based on obstacle lane
-    caneConcretecenter: new Howl({src: ['sounds/cane/cane_on_concrete_center.wav'], loop: false}),
-    caneConcreteleft: new Howl({src:['sounds/cane/cane_on_concrete_left.wav'], loop: false}),
-    caneConcreteright: new Howl({src: ['sounds/cane/cane_on_concrete_right.wav'], loop: false}),
-caneCementcenter: new Howl({src: ['sounds/cane/cane_on_cement_center.wav'], loop: false}),
-caneCementleft: new Howl({src: ['sounds/cane/cane_on_cement_left.wav'], loop: false}),
-caneCementright: new Howl({src: ['sounds/cane/cane_on_cement_right.wav'], loop: false}),
-skateboardCenter: new Howl({src: ['sounds/skateboard/skateboard_center.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume}),
-skateboardLeft: new Howl({src: ['sounds/skateboard/skateboard_left.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume}),
-skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume}),
+    caneConcretecenter: new Howl({ src: ['sounds/cane/cane_on_concrete_center.wav'], loop: false }),
+    caneConcreteleft: new Howl({ src: ['sounds/cane/cane_on_concrete_left.wav'], loop: false }),
+    caneConcreteright: new Howl({ src: ['sounds/cane/cane_on_concrete_right.wav'], loop: false }),
+    caneCementcenter: new Howl({ src: ['sounds/cane/cane_on_cement_center.wav'], loop: false }),
+    caneCementleft: new Howl({ src: ['sounds/cane/cane_on_cement_left.wav'], loop: false }),
+    caneCementright: new Howl({ src: ['sounds/cane/cane_on_cement_right.wav'], loop: false }),
+    skateboardCenter: new Howl({ src: ['sounds/skateboard/skateboard_center.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume }),
+    skateboardLeft: new Howl({ src: ['sounds/skateboard/skateboard_left.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume }),
+    skateboardRight: new Howl({ src: ['sounds/skateboard/skateboard_right.wav'], loop: false, volume: audioMix.skateboardApproachBaseVolume }),
     
-    caneHit: new Howl({src: ['sounds/player/caneHit.wav'],}),
-    skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav'], volume: audioMix.skateboardHitVolume}),
-    carStep1: new Howl({src: ['sounds/car/carstep1.wav'], loop: false}),
-    carStep2: new Howl({src: ['sounds/car/carstep2.wav'], loop: false}),
-    carStep3: new Howl({src: ['sounds/car/carstep3.wav'], loop: false}),
+    caneHit: new Howl({ src: ['sounds/player/caneHit.wav'] }),
+    skateboardHit: new Howl({ src: ['sounds/player/skateboardhit.wav'], volume: audioMix.skateboardHitVolume }),
+    carStep1: new Howl({ src: ['sounds/car/carstep1.wav'], loop: false }),
+    carStep2: new Howl({ src: ['sounds/car/carstep2.wav'], loop: false }),
+    carStep3: new Howl({ src: ['sounds/car/carstep3.wav'], loop: false }),
     
     // Game sounds
     levelUp: null, // new Howl({src: ['sounds/level_up.mp3']}),
-    playerSteps1: new Howl({src: ['sounds/player/concrete1.wav']}),
-    playerSteps2: new Howl({src: ['sounds/player/concrete2.wav']}),
-    playerSteps3: new Howl({src: ['sounds/player/concrete3.wav']}),
+    playerSteps1: new Howl({ src: ['sounds/player/concrete1.wav'] }),
+    playerSteps2: new Howl({ src: ['sounds/player/concrete2.wav'] }),
+    playerSteps3: new Howl({ src: ['sounds/player/concrete3.wav'] }),
     gameOver: null // new Howl({src: ['sounds/game_over.mp3']})
 };
 
 // Footstep tracking
 let currentFootstepIndex = 0;
 let footstepInterval = null;
-let currentCarStepIndex = 0;
 let carStepInterval = null;
 
 function startGame() {
     const playButton = document.getElementById("play");
     const gameArea = document.getElementById("gameArea");
+
+    // Hard reset any leftover timers/sounds from a previous run.
+    if (gameState.animationFrame) {
+        clearTimeout(gameState.animationFrame);
+    }
+    stopStepAudioLoops();
     
     // Hide play button
     playButton.style.display = "none";
@@ -96,7 +97,7 @@ function startGame() {
         baseSpeed: 150,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
-    spawnInterval: 2000,
+        spawnInterval: 2000,
         animationFrame: null,
         stunnedUntil: 0,
         onCarId: null,
@@ -442,11 +443,10 @@ function fallFromCar() {
     if (!gameState.running) return;
 
     gameState.carRoofSteps = 0;
-    stopCarRoofSteps();
     gameState.stunnedUntil = Date.now() + 3000;
     updateStatus('You just fell down from a car!');
     announceToScreenReader('You just fell down from a car! Stunned for 3 seconds.');
-    stopFootsteps();
+    stopStepAudioLoops();
 
     if (stunRecoveryTimeout) {
         clearTimeout(stunRecoveryTimeout);
@@ -556,8 +556,7 @@ function endGame(hitBy) {
     }
     
     // Stop footstep sounds
-    stopFootsteps();
-    stopCarRoofSteps();
+    stopStepAudioLoops();
     document.removeEventListener('keydown', handleKeyPress);
     
     // Fade out obstacle sounds so death audio is clear
@@ -606,6 +605,9 @@ function endGame(hitBy) {
 }
 
 function playFootsteps() {
+    // Prevent stacking intervals when game restarts or state transitions overlap.
+    stopFootsteps();
+
     // Cycle through footstep sounds: 1, 2, 3, 1, 2, 3...
     const footstepSounds = ['playerSteps1', 'playerSteps2', 'playerSteps3'];
     
@@ -639,6 +641,9 @@ function stopFootsteps() {
 }
 
 function startCarRoofSteps() {
+    // Prevent stacking intervals on rapid state changes.
+    stopCarRoofSteps();
+
     const carStepSequence = [
         { soundName: 'carStep1', rate: 1.0 },
         { soundName: 'carStep2', rate: 1.12 },
@@ -675,7 +680,6 @@ function startCarRoofSteps() {
         gameState.carRoofSteps = nextStepNumber;
     };
 
-    stopCarRoofSteps();
     playNextCarStep();
 
     carStepInterval = setInterval(() => {
@@ -688,7 +692,11 @@ function stopCarRoofSteps() {
         clearInterval(carStepInterval);
         carStepInterval = null;
     }
-    currentCarStepIndex = 0;
+}
+
+function stopStepAudioLoops() {
+    stopFootsteps();
+    stopCarRoofSteps();
 }
 
 function updateStatus(message) {
