@@ -4,12 +4,13 @@ let gameState = {
     playerLane: 1, // 0 = left, 1 = middle, 2 = right
     score: 0,
     coinProgress: 0,
+    coinsCollected: 0,
     level: 1,
     speed: 1,
-    baseSpeed: 150, // Base speed in ms for obstacle movement - moderate pace
+    baseSpeed: 180, // Base speed in ms for obstacle movement - moderate pace
     obstacles: [], // Array of {type: 'cane'|'skateboard'|'coin', lane: 0-2, distance: number, coinAmount: number}
     lastObstacleSpawn: 0,
-    spawnInterval: 30000, // Spawn obstacles every 30 seconds at level 1
+    spawnInterval: 8000, // Spawn obstacles every 8 seconds at level 1
     animationFrame: null,
     stunnedUntil: 0,
     onCarId: null,
@@ -95,12 +96,13 @@ function startGame() {
         playerLane: 1,
         score: 0,
         coinProgress: 0,
+        coinsCollected: 0,
         level: 1,
         speed: 1,
-        baseSpeed: 150,
+        baseSpeed: 180,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
-        spawnInterval: 5000,
+        spawnInterval: 8000,
         animationFrame: null,
         stunnedUntil: 0,
         onCarId: null,
@@ -338,7 +340,7 @@ function spawnObstacle() {
         type: obstacleType,
         lane: lane,
         distance: 100, // Start at distance 100, moves toward 0 (player is at 0)
-        coinAmount: obstacleType === 'coin' ? Math.floor(Math.random() * 1000) + 1 : 0,
+        coinAmount: obstacleType === 'coin' ? Math.floor(Math.random() * 5) + 1 : 0,
         soundId: null, // Store the sound ID for this obstacle
         soundKey: null,
         carJumped: false,
@@ -423,10 +425,8 @@ function moveObstacles() {
             // Award points for avoiding obstacles (not coins)
             if (obstacle.type === 'skateboard') {
                 gameState.score += 3;
-                updateStatus(`Avoided skateboard! +3 points. Score: ${gameState.score}`);
             } else if (obstacle.type === 'cane') {
                 gameState.score += 1;
-                updateStatus(`Avoided cane! +1 point. Score: ${gameState.score}`);
             }
             // Note: Coins don't give points for avoiding, only for collecting
 
@@ -510,6 +510,7 @@ function checkCollisions() {
                 // Collect coin
                 gameState.score += obstacle.coinAmount;
                 gameState.coinProgress += obstacle.coinAmount;
+                gameState.coinsCollected += 1;
                 
                 // Remove from obstacles array
                 gameState.obstacles.splice(i, 1);
@@ -532,11 +533,11 @@ function checkCollisions() {
 }
 
 function checkLevelUp() {
-    const newLevel = Math.floor(gameState.coinProgress / 60) + 1;
+    const newLevel = Math.floor(gameState.coinsCollected / 8) + 1;
     
     if (newLevel > gameState.level) {
         gameState.level = newLevel;
-        gameState.speed = 1 + (gameState.level - 1) * 0.2; // 20% faster each level
+        gameState.speed = Math.min(2, 1 + (gameState.level - 1) * 0.1); // 10% faster each level, capped
 
         // Refresh footsteps so interval matches the new speed
         stopFootsteps();
