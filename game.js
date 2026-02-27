@@ -93,7 +93,7 @@ function startGame() {
         score: 0,
         level: 1,
         speed: 2,
-        baseSpeed: 100,
+        baseSpeed: 150,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
     spawnInterval: 2000,
