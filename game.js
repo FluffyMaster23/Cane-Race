@@ -1,9 +1,32 @@
+const coinStorageKey = 'caneRaceTotalCoins';
+
+function loadSavedCoinTotal() {
+    try {
+        const savedValue = localStorage.getItem(coinStorageKey);
+        const parsedValue = Number.parseInt(savedValue, 10);
+        if (Number.isFinite(parsedValue) && parsedValue >= 0) {
+            return parsedValue;
+        }
+    } catch (error) {
+        // Ignore storage errors and fall back to zero.
+    }
+    return 0;
+}
+
+function saveCoinTotal() {
+    try {
+        localStorage.setItem(coinStorageKey, String(gameState.coinProgress));
+    } catch (error) {
+        // Ignore storage errors.
+    }
+}
+
 // Game state
 let gameState = {
     running: false,
     playerLane: 1, // 0 = left, 1 = middle, 2 = right
     score: 0,
-    coinProgress: 0,
+    coinProgress: loadSavedCoinTotal(),
     coinsCollected: 0,
     level: 1,
     speed: 1,
@@ -20,6 +43,7 @@ let gameState = {
 const audioMix = {
     skateboardApproachBoost: 1.35,
     skateboardApproachBaseVolume: 0.95,
+    carApproachBaseVolume: 0.9,
     caneHitVolume: 1.0,
     skateboardHitVolume: 1.0,
     carJumpBonus: 10
@@ -58,6 +82,7 @@ const sounds = {
     
     caneHit: new Howl({ src: ['sounds/player/caneHit.wav'] }),
     skateboardHit: new Howl({ src: ['sounds/player/skateboardhit.wav'], volume: audioMix.skateboardHitVolume }),
+    carAmb: new Howl({ src: ['sounds/car/carAmb.mp3'], loop: false, volume: audioMix.carApproachBaseVolume }),
     carStep1: new Howl({ src: ['sounds/car/carstep1.wav'], loop: false }),
     carStep2: new Howl({ src: ['sounds/car/carstep2.wav'], loop: false }),
     carStep3: new Howl({ src: ['sounds/car/carstep3.wav'], loop: false }),
@@ -96,7 +121,7 @@ function startGame() {
         running: true,
         playerLane: 1,
         score: 0,
-        coinProgress: 0,
+        coinProgress: gameState.coinProgress,
         coinsCollected: 0,
         level: 1,
         speed: 1,
@@ -326,12 +351,12 @@ function spawnObstacle() {
     const random = Math.random();
     let obstacleType;
     
-    // 30% cane, 25% skateboard, 30% coin, 15% standing car
-    if (random < 0.30) {
+    // 25% cane, 22% skateboard, 28% coin, 25% standing car
+    if (random < 0.25) {
         obstacleType = 'cane';
-    } else if (random < 0.55) {
+    } else if (random < 0.47) {
         obstacleType = 'skateboard';
-    } else if (random < 0.85) {
+    } else if (random < 0.75) {
         obstacleType = 'coin';
     } else {
         obstacleType = 'car';
@@ -391,7 +416,10 @@ function spawnObstacle() {
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
     } else if (obstacleType === 'car') {
-        // No dedicated car-approach sound yet.
+        obstacle.soundId = sounds.carAmb.play();
+        sounds.carAmb.loop(false, obstacle.soundId);
+        obstacle.soundKey = getSoundKeyFromInstance(sounds.carAmb);
+        updateSingleObstacleSound(obstacle);
     }
 }
 
@@ -489,7 +517,7 @@ function getSoundNameForObstacle(obstacle) {
     } else if (obstacle.type === 'skateboard') {
         return 'skateboardCenter'; // Always use center sound with dynamic panning
     } else if (obstacle.type === 'car') {
-        return null;
+        return 'carAmb';
     }
     // Coins have no sound until collected
     return null;
@@ -522,6 +550,7 @@ function checkCollisions() {
                 gameState.score += obstacle.coinAmount;
                 gameState.coinProgress += obstacle.coinAmount;
                 gameState.coinsCollected += 1;
+                saveCoinTotal();
                 updateHUD();
                 
                 // Remove from obstacles array
