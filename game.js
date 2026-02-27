@@ -96,7 +96,7 @@ function startGame() {
         coinProgress: 0,
         level: 1,
         speed: 1,
-        baseSpeed: 130,
+        baseSpeed: 150,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
         spawnInterval: 5000,
