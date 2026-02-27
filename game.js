@@ -129,25 +129,25 @@ function handleKeyPress(e) {
         case 'ArrowLeft':
             e.preventDefault();
             if (isStunned()) return;
-            if (gameState.playerLane > 0) {
-                gameState.playerLane--;
+            gameState.playerLane = (gameState.playerLane + 2) % 3;
+            if (gameState.playerLane === 1) {
+                playSound('turnCenter');
+            } else {
                 playSound('turnLeft');
-                updateAllObstacleSounds();
             }
+            updateAllObstacleSounds();
             break;
             
         case 'ArrowRight':
             e.preventDefault();
             if (isStunned()) return;
-            if (gameState.playerLane < 2) {
-                gameState.playerLane++;
-                if (gameState.playerLane === 1) {
-                    playSound('turnCenter');
-                } else {
-                    playSound('turnRight');
-                }
-                updateAllObstacleSounds();
+            gameState.playerLane = (gameState.playerLane + 1) % 3;
+            if (gameState.playerLane === 1) {
+                playSound('turnCenter');
+            } else {
+                playSound('turnRight');
             }
+            updateAllObstacleSounds();
             break;
             
         case 'ArrowUp':
