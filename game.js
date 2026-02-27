@@ -755,4 +755,8 @@ function announceToScreenReader(message) {
     }, 1000);
 }
 
-window.addEventListener('DOMContentLoaded', updateHUD);
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', updateHUD);
+} else {
+    updateHUD();
+}
