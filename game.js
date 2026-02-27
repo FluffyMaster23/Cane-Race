@@ -121,7 +121,7 @@ function startGame() {
         running: true,
         playerLane: 1,
         score: 0,
-        coinProgress: gameState.coinProgress,
+        coinProgress: loadSavedCoinTotal(),
         coinsCollected: 0,
         level: 1,
         speed: 1,
@@ -784,8 +784,13 @@ function announceToScreenReader(message) {
     }, 1000);
 }
 
-if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', updateHUD);
-} else {
+function initializeHUDFromStorage() {
+    gameState.coinProgress = loadSavedCoinTotal();
     updateHUD();
+}
+
+if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initializeHUDFromStorage);
+} else {
+    initializeHUDFromStorage();
 }
