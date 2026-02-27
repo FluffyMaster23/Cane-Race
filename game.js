@@ -99,7 +99,7 @@ function startGame() {
         baseSpeed: 130,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
-        spawnInterval: 30000,
+        spawnInterval: 10000,
         animationFrame: null,
         stunnedUntil: 0,
         onCarId: null,
