@@ -144,6 +144,8 @@ function handleKeyPress(e) {
             break;
             
         case 'ArrowUp':
+        case ' ':
+        case 'Spacebar':
             e.preventDefault();
             playSound('jump');
             movePlayerForward(2);
@@ -463,11 +465,16 @@ function checkCollisions() {
     for (let i = gameState.obstacles.length - 1; i >= 0; i--) {
         const obstacle = gameState.obstacles[i];
 
-        if (obstacle.type === 'car' && obstacle.distance <= 2 && obstacle.distance >= -2 && gameState.onCarId === null) {
+        if (
+            obstacle.type === 'car' &&
+            obstacle.lane === gameState.playerLane &&
+            obstacle.distance <= 2 &&
+            obstacle.distance >= -2 &&
+            gameState.onCarId === null
+        ) {
             gameState.onCarId = obstacle.id;
             stopFootsteps();
             startCarRoofSteps();
-            updateStatus('You are on a standing car! Press Up at the right time to jump off.');
             continue;
         }
         
@@ -613,7 +620,7 @@ function startCarRoofSteps() {
     const carStepSounds = ['carStep1', 'carStep2', 'carStep3'];
 
     const playNextCarStep = () => {
-        if (!gameState.running || gameState.onCarId === null) return;
+        if (!gameState.running) return;
 
         const soundName = carStepSounds[currentCarStepIndex];
         if (sounds[soundName]) {
