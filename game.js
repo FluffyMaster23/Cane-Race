@@ -56,8 +56,9 @@ skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], loop
     
     caneHit: new Howl({src: ['sounds/player/caneHit.wav'], volume: audioMix.caneHitVolume}),
     skateboardHit: new Howl({src: ['sounds/player/skateboardhit.wav'], volume: audioMix.skateboardHitVolume}),
-    carApproach: null,
-    carStep: null,
+    carStep1: new Howl({src: ['sounds/car/carstep1.wav'], loop: false}),
+    carStep2: new Howl({src: ['sounds/car/carstep2.wav'], loop: false}),
+    carStep3: new Howl({src: ['sounds/car/carstep3.wav'], loop: false}),
     
     // Game sounds
     levelUp: null, // new Howl({src: ['sounds/level_up.mp3']}),
@@ -70,6 +71,8 @@ skateboardRight: new Howl({src: ['sounds/skateboard/skateboard_right.wav'], loop
 // Footstep tracking
 let currentFootstepIndex = 0;
 let footstepInterval = null;
+let currentCarStepIndex = 0;
+let carStepInterval = null;
 
 function startGame() {
     const playButton = document.getElementById("play");
@@ -91,7 +94,7 @@ function startGame() {
         baseSpeed: 100,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
-        spawnInterval: 2000,
+    spawnInterval: 2000,
         animationFrame: null,
         stunnedUntil: 0,
         onCarId: null
@@ -175,12 +178,17 @@ function tryJumpOffCar() {
 
     const inJumpWindow = carObstacle.distance <= 2 && carObstacle.distance >= -1;
     if (inJumpWindow) {
+        stopCarRoofSteps();
         carObstacle.carJumped = true;
         gameState.onCarId = null;
         gameState.score += audioMix.carJumpBonus;
+        if (gameState.running && !isStunned()) {
+            playFootsteps();
+        }
         updateStatus(`Jumped off the car! +${audioMix.carJumpBonus} points. Score: ${gameState.score}`);
         checkLevelUp();
     } else {
+        stopCarRoofSteps();
         carObstacle.carJumped = false;
         gameState.onCarId = null;
         carObstacle.distance = -6;
@@ -353,10 +361,7 @@ function spawnObstacle() {
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
     } else if (obstacleType === 'car') {
-        if (sounds.carApproach) {
-            obstacle.soundId = sounds.carApproach.play();
-            obstacle.soundKey = 'carApproach';
-        }
+        // No dedicated car-approach sound yet.
     }
 }
 
@@ -415,6 +420,7 @@ function moveObstacles() {
 function fallFromCar() {
     if (!gameState.running) return;
 
+    stopCarRoofSteps();
     gameState.stunnedUntil = Date.now() + 3000;
     updateStatus('You just fell down from a car!');
     announceToScreenReader('You just fell down from a car! Stunned for 3 seconds.');
@@ -447,7 +453,7 @@ function getSoundNameForObstacle(obstacle) {
     } else if (obstacle.type === 'skateboard') {
         return 'skateboardCenter'; // Always use center sound with dynamic panning
     } else if (obstacle.type === 'car') {
-        return 'carApproach';
+        return null;
     }
     // Coins have no sound until collected
     return null;
@@ -459,6 +465,8 @@ function checkCollisions() {
 
         if (obstacle.type === 'car' && obstacle.distance <= 2 && obstacle.distance >= -2 && gameState.onCarId === null) {
             gameState.onCarId = obstacle.id;
+            stopFootsteps();
+            startCarRoofSteps();
             updateStatus('You are on a standing car! Press Up at the right time to jump off.');
             continue;
         }
@@ -520,6 +528,7 @@ function endGame(hitBy) {
     
     // Stop footstep sounds
     stopFootsteps();
+    stopCarRoofSteps();
     document.removeEventListener('keydown', handleKeyPress);
     
     // Fade out obstacle sounds so death audio is clear
@@ -598,6 +607,36 @@ function stopFootsteps() {
         footstepInterval = null;
     }                   
     currentFootstepIndex = 0;
+}
+
+function startCarRoofSteps() {
+    const carStepSounds = ['carStep1', 'carStep2', 'carStep3'];
+
+    const playNextCarStep = () => {
+        if (!gameState.running || gameState.onCarId === null) return;
+
+        const soundName = carStepSounds[currentCarStepIndex];
+        if (sounds[soundName]) {
+            sounds[soundName].play();
+        }
+
+        currentCarStepIndex = (currentCarStepIndex + 1) % 3;
+    };
+
+    stopCarRoofSteps();
+    playNextCarStep();
+
+    carStepInterval = setInterval(() => {
+        playNextCarStep();
+    }, 400 / gameState.speed);
+}
+
+function stopCarRoofSteps() {
+    if (carStepInterval) {
+        clearInterval(carStepInterval);
+        carStepInterval = null;
+    }
+    currentCarStepIndex = 0;
 }
 
 function updateStatus(message) {
