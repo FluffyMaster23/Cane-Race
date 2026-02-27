@@ -28,6 +28,7 @@ const audioMix = {
 let nextObstacleId = 1;
 let stunRecoveryTimeout = null;
 const hazardCollisionDistance = 1;
+const pointsPerLevel = 50;
 
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
 const sounds = {
@@ -124,6 +125,8 @@ function startGame() {
     
     // Start game loop
     gameLoop();
+
+    updateHUD();
     
     updateStatus("Game started!");
 }
@@ -211,6 +214,7 @@ function tryJumpOffCar() {
         gameState.onCarId = null;
         gameState.carRoofSteps = 0;
         gameState.score += audioMix.carJumpBonus;
+        updateHUD();
         if (gameState.running && !isStunned()) {
             playFootsteps();
         }
@@ -423,10 +427,17 @@ function moveObstacles() {
             }
             
             // Award points for avoiding obstacles (not coins)
+            let pointsAwarded = 0;
             if (obstacle.type === 'skateboard') {
                 gameState.score += 3;
+                pointsAwarded = 3;
             } else if (obstacle.type === 'cane') {
                 gameState.score += 1;
+                pointsAwarded = 1;
+            }
+
+            if (pointsAwarded > 0) {
+                updateHUD();
             }
             // Note: Coins don't give points for avoiding, only for collecting
 
@@ -511,6 +522,7 @@ function checkCollisions() {
                 gameState.score += obstacle.coinAmount;
                 gameState.coinProgress += obstacle.coinAmount;
                 gameState.coinsCollected += 1;
+                updateHUD();
                 
                 // Remove from obstacles array
                 gameState.obstacles.splice(i, 1);
@@ -533,7 +545,7 @@ function checkCollisions() {
 }
 
 function checkLevelUp() {
-    const newLevel = Math.floor(gameState.coinsCollected / 8) + 1;
+    const newLevel = Math.floor(gameState.score / pointsPerLevel) + 1;
     
     if (newLevel > gameState.level) {
         gameState.level = newLevel;
@@ -714,6 +726,19 @@ function updateStatus(message) {
     document.getElementById("status").textContent = message;
 }
 
+function updateHUD() {
+    const scoreValue = document.getElementById('scoreValue');
+    const coinTotalValue = document.getElementById('coinTotalValue');
+
+    if (scoreValue) {
+        scoreValue.textContent = gameState.score;
+    }
+
+    if (coinTotalValue) {
+        coinTotalValue.textContent = gameState.coinProgress;
+    }
+}
+
 function announceToScreenReader(message) {
     // Create a temporary element for screen reader announcement
     const announcement = document.createElement('div');
@@ -729,3 +754,5 @@ function announceToScreenReader(message) {
         document.body.removeChild(announcement);
     }, 1000);
 }
+
+window.addEventListener('DOMContentLoaded', updateHUD);
