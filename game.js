@@ -26,6 +26,7 @@ const audioMix = {
 
 let nextObstacleId = 1;
 let stunRecoveryTimeout = null;
+const hazardCollisionDistance = 1;
 
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
 const sounds = {
@@ -520,8 +521,8 @@ function checkCollisions() {
                 checkLevelUp();
             }
             
-            // Canes and skateboards hit at distance 2
-            if ((obstacle.type === 'cane' || obstacle.type === 'skateboard') && obstacle.distance <= 2 && obstacle.distance >= -2) {
+            // Canes and skateboards only hit when they are truly close to the player
+            if ((obstacle.type === 'cane' || obstacle.type === 'skateboard') && Math.abs(obstacle.distance) <= hazardCollisionDistance) {
                 // Hit by cane or skateboard - game over
                 endGame(obstacle.type);
                 return;
