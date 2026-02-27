@@ -11,7 +11,8 @@ let gameState = {
     spawnInterval: 25000, // Spawn obstacles every 2.5 seconds at level 1
     animationFrame: null,
     stunnedUntil: 0,
-    onCarId: null
+    onCarId: null,
+    carRoofSteps: 0
 };
 
 const audioMix = {
@@ -98,7 +99,8 @@ function startGame() {
     spawnInterval: 2000,
         animationFrame: null,
         stunnedUntil: 0,
-        onCarId: null
+        onCarId: null,
+        carRoofSteps: 0
     };
 
     nextObstacleId = 1;
@@ -152,6 +154,18 @@ function handleKeyPress(e) {
         case ' ':
         case 'Spacebar':
             e.preventDefault();
+
+            if (gameState.onCarId !== null) {
+                // Ignore accidental jump presses during the first roof steps.
+                if (gameState.carRoofSteps < 4) {
+                    break;
+                }
+
+                playSound('jump');
+                tryJumpOffCar();
+                break;
+            }
+
             playSound('jump');
             movePlayerForward(2);
             tryJumpOffCar();
@@ -180,14 +194,16 @@ function tryJumpOffCar() {
     const carObstacle = gameState.obstacles.find(obstacle => obstacle.id === gameState.onCarId && obstacle.type === 'car');
     if (!carObstacle) {
         gameState.onCarId = null;
+        gameState.carRoofSteps = 0;
         return;
     }
 
-    const inJumpWindow = carObstacle.distance <= 2 && carObstacle.distance >= -1;
-    if (inJumpWindow) {
+    // Car jump becomes available only after 4 roof steps.
+    if (gameState.carRoofSteps >= 4) {
         stopCarRoofSteps();
         carObstacle.carJumped = true;
         gameState.onCarId = null;
+        gameState.carRoofSteps = 0;
         gameState.score += audioMix.carJumpBonus;
         if (gameState.running && !isStunned()) {
             playFootsteps();
@@ -195,11 +211,8 @@ function tryJumpOffCar() {
         updateStatus(`Jumped off the car! +${audioMix.carJumpBonus} points. Score: ${gameState.score}`);
         checkLevelUp();
     } else {
-        stopCarRoofSteps();
-        carObstacle.carJumped = false;
-        gameState.onCarId = null;
-        carObstacle.distance = -6;
-        fallFromCar();
+        // Too early to jump from roof; ignore input.
+        return;
     }
 }
 
@@ -377,7 +390,7 @@ function moveObstacles() {
     for (let i = gameState.obstacles.length - 1; i >= 0; i--) {
         const obstacle = gameState.obstacles[i];
         obstacle.distance -= 1;
-        
+
         // Update volume and panning continuously as obstacle moves
         updateSingleObstacleSound(obstacle);
         
@@ -415,6 +428,7 @@ function moveObstacles() {
 
             if (obstacle.type === 'car' && gameState.onCarId === obstacle.id && !obstacle.carJumped) {
                 gameState.onCarId = null;
+                gameState.carRoofSteps = 0;
                 fallFromCar();
             }
             
@@ -427,6 +441,7 @@ function moveObstacles() {
 function fallFromCar() {
     if (!gameState.running) return;
 
+    gameState.carRoofSteps = 0;
     stopCarRoofSteps();
     gameState.stunnedUntil = Date.now() + 3000;
     updateStatus('You just fell down from a car!');
@@ -478,6 +493,7 @@ function checkCollisions() {
             gameState.onCarId === null
         ) {
             gameState.onCarId = obstacle.id;
+            gameState.carRoofSteps = 0;
             stopFootsteps();
             startCarRoofSteps();
             continue;
@@ -532,6 +548,7 @@ function endGame(hitBy) {
     gameState.running = false;
     clearTimeout(gameState.animationFrame);
     gameState.onCarId = null;
+    gameState.carRoofSteps = 0;
     gameState.stunnedUntil = 0;
     if (stunRecoveryTimeout) {
         clearTimeout(stunRecoveryTimeout);
@@ -622,17 +639,40 @@ function stopFootsteps() {
 }
 
 function startCarRoofSteps() {
-    const carStepSounds = ['carStep1', 'carStep2', 'carStep3'];
+    const carStepSequence = [
+        { soundName: 'carStep1', rate: 1.0 },
+        { soundName: 'carStep2', rate: 1.12 },
+        { soundName: 'carStep3', rate: 1.24 },
+        { soundName: 'carStep3', rate: 1.38 }
+    ];
 
     const playNextCarStep = () => {
-        if (!gameState.running) return;
+        if (!gameState.running || gameState.onCarId === null) return;
 
-        const soundName = carStepSounds[currentCarStepIndex];
-        if (sounds[soundName]) {
-            sounds[soundName].play();
+        const nextStepNumber = gameState.carRoofSteps + 1;
+        if (nextStepNumber >= 5) {
+            const carObstacle = gameState.obstacles.find(
+                obstacle => obstacle.id === gameState.onCarId && obstacle.type === 'car'
+            );
+
+            if (carObstacle && !carObstacle.carJumped) {
+                gameState.onCarId = null;
+                gameState.carRoofSteps = 0;
+                carObstacle.distance = -6;
+                fallFromCar();
+            }
+            return;
         }
 
-        currentCarStepIndex = (currentCarStepIndex + 1) % 3;
+        const sequenceIndex = Math.min(nextStepNumber - 1, carStepSequence.length - 1);
+        const stepAudio = carStepSequence[sequenceIndex];
+        const stepSound = sounds[stepAudio.soundName];
+        if (stepSound) {
+            const soundId = stepSound.play();
+            stepSound.rate(stepAudio.rate, soundId);
+        }
+
+        gameState.carRoofSteps = nextStepNumber;
     };
 
     stopCarRoofSteps();
