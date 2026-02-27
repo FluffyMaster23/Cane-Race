@@ -8,7 +8,7 @@ let gameState = {
     baseSpeed: 150, // Base speed in ms for obstacle movement - moderate pace
     obstacles: [], // Array of {type: 'cane'|'skateboard'|'coin', lane: 0-2, distance: number, coinAmount: number}
     lastObstacleSpawn: 0,
-    spawnInterval: 10000, // Spawn obstacles every 2.5 seconds at level 1
+    spawnInterval: 30000, // Spawn obstacles every 30 seconds at level 1
     animationFrame: null,
     stunnedUntil: 0,
     onCarId: null,
@@ -97,7 +97,7 @@ function startGame() {
         baseSpeed: 130,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
-        spawnInterval: 2000,
+        spawnInterval: 30000,
         animationFrame: null,
         stunnedUntil: 0,
         onCarId: null,
