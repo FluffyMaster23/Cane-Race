@@ -204,6 +204,10 @@ function handleKeyPress(e) {
         case 'Spacebar':
             e.preventDefault();
 
+            if (jumpLandingTimeout) {
+                break;
+            }
+
             if (gameState.onCarId !== null) {
                 // Ignore accidental jump presses during the first roof steps.
                 if (gameState.carRoofSteps < 4) {
@@ -216,8 +220,20 @@ function handleKeyPress(e) {
             }
 
             playSound('jump');
-            movePlayerForward(2);
-            tryJumpOffCar();
+            stopFootsteps();
+            updateStatus('Jumped. In the air...');
+            jumpLandingTimeout = setTimeout(() => {
+                jumpLandingTimeout = null;
+                if (!gameState.running || isStunned() || gameState.onCarId !== null) {
+                    return;
+                }
+
+                movePlayerForward(2);
+                if (gameState.running && !isStunned()) {
+                    playFootsteps();
+                }
+                updateStatus(`Landed. Score: ${gameState.score}`);
+            }, carJumpAirTimeMs);
             break;
     }
 }
