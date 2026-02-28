@@ -42,11 +42,11 @@ let gameState = {
 
 const carJumpBonus = 10;
 const obstacleApproachMix = {
-    minVolume: 0.08,
+    minVolume: 0.2,
     distanceRange: 120,
     fadeOutRange: 10,
-    caneBoost: 1.25,
-    skateboardBoost: 1.45
+    caneBoost: 1.5,
+    skateboardBoost: 1.8
 };
 
 let nextObstacleId = 1;
@@ -279,14 +279,20 @@ function updateDirectionalObstacleSounds() {
 
         const currentSoundName = obstacle.soundKey || getSoundNameForObstacle(obstacle);
         const newSoundName = getSoundKeyFromInstance(newSound);
-        if (currentSoundName === newSoundName) return;
+        const currentSound = currentSoundName ? sounds[currentSoundName] : null;
+        const isCurrentSoundPlaying = currentSound && obstacle.soundId ? currentSound.playing(obstacle.soundId) : false;
+
+        if (currentSoundName === newSoundName && isCurrentSoundPlaying) {
+            updateSingleObstacleSound(obstacle);
+            return;
+        }
 
         if (currentSoundName && sounds[currentSoundName]) {
             sounds[currentSoundName].stop(obstacle.soundId);
         }
 
         obstacle.soundId = newSound.play();
-        newSound.loop(false, obstacle.soundId);
+        newSound.loop(true, obstacle.soundId);
         obstacle.soundKey = newSoundName;
         updateSingleObstacleSound(obstacle);
     });
@@ -382,33 +388,17 @@ function spawnObstacle() {
     
     // Play obstacle approach sound based on lane and store sound ID
     if (obstacleType === 'cane') {
-        // Select sound based on lane
-        let caneSound;
-        if (lane === 0) {
-            caneSound = sounds.caneConcreteleft;
-        } else if (lane === 1) {
-            caneSound = sounds.caneConcretecenter;
-        } else {
-            caneSound = sounds.caneConcreteright;
-        }
+        const caneSound = getDirectionalObstacleSound(obstacle);
         
         obstacle.soundId = caneSound.play();
-        caneSound.loop(false, obstacle.soundId);
+        caneSound.loop(true, obstacle.soundId);
         obstacle.soundKey = getSoundKeyFromInstance(caneSound);
         updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'skateboard') {
-        // Select sound based on lane
-        let skateboardSound;
-        if (lane === 0) {
-            skateboardSound = sounds.skateboardLeft;
-        } else if (lane === 1) {
-            skateboardSound = sounds.skateboardCenter;
-        } else {
-            skateboardSound = sounds.skateboardRight;
-        }
+        const skateboardSound = getDirectionalObstacleSound(obstacle);
         
         obstacle.soundId = skateboardSound.play();
-        skateboardSound.loop(false, obstacle.soundId);
+        skateboardSound.loop(true, obstacle.soundId);
         obstacle.soundKey = getSoundKeyFromInstance(skateboardSound);
         updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'coin') {
