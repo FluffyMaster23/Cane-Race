@@ -333,11 +333,41 @@ function updateDirectionalObstacleSounds() {
     });
 }
 
+function ensureCarAmbiencePlayback(obstacle) {
+    if (!obstacle || obstacle.type !== 'car' || !sounds.carAmb) return;
+
+    if (obstacle.soundId && sounds.carAmb.playing(obstacle.soundId)) {
+        return;
+    }
+
+    const soundId = sounds.carAmb.play();
+    obstacle.soundId = soundId;
+    obstacle.soundKey = getSoundKeyFromInstance(sounds.carAmb);
+    sounds.carAmb.loop(false, soundId);
+
+    sounds.carAmb.once('end', () => {
+        const isStillActiveCar = gameState.running && gameState.obstacles.some(
+            activeObstacle => activeObstacle.id === obstacle.id && activeObstacle.type === 'car' && !activeObstacle.carJumped
+        );
+
+        if (!isStillActiveCar) {
+            return;
+        }
+
+        ensureCarAmbiencePlayback(obstacle);
+        updateSingleObstacleSound(obstacle);
+    }, soundId);
+}
+
 function updateSingleObstacleSound(obstacle) {
-    if (!obstacle.soundId) return;
-    
     const soundName = obstacle.soundKey || getSoundNameForObstacle(obstacle);
     if (!soundName || !sounds[soundName]) return;
+
+    if (obstacle.type === 'car') {
+        ensureCarAmbiencePlayback(obstacle);
+    }
+
+    if (!obstacle.soundId) return;
     
     // Distance-based volume: louder as it gets closer (0-100 distance)
     // At distance 100: very quiet (0.05)
@@ -441,9 +471,7 @@ function spawnObstacle() {
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
     } else if (obstacleType === 'car') {
-        obstacle.soundId = sounds.carAmb.play();
-        sounds.carAmb.loop(true, obstacle.soundId);
-        obstacle.soundKey = getSoundKeyFromInstance(sounds.carAmb);
+        ensureCarAmbiencePlayback(obstacle);
         updateSingleObstacleSound(obstacle);
     }
 }
@@ -586,15 +614,8 @@ function checkCollisions() {
         ) {
             gameState.onCarId = obstacle.id;
             gameState.carRoofSteps = 0;
-            if (obstacle.soundId && sounds.carAmb) {
-                sounds.carAmb.loop(true, obstacle.soundId);
-                if (!sounds.carAmb.playing(obstacle.soundId)) {
-                    obstacle.soundId = sounds.carAmb.play();
-                    sounds.carAmb.loop(true, obstacle.soundId);
-                    obstacle.soundKey = getSoundKeyFromInstance(sounds.carAmb);
-                    updateSingleObstacleSound(obstacle);
-                }
-            }
+            ensureCarAmbiencePlayback(obstacle);
+            updateSingleObstacleSound(obstacle);
             stopFootsteps();
             startCarRoofSteps();
             continue;
