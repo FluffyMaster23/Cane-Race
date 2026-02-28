@@ -333,39 +333,9 @@ function updateDirectionalObstacleSounds() {
     });
 }
 
-function ensureCarAmbiencePlayback(obstacle) {
-    if (!obstacle || obstacle.type !== 'car' || !sounds.carAmb) return;
-
-    if (obstacle.soundId && sounds.carAmb.playing(obstacle.soundId)) {
-        return;
-    }
-
-    const soundId = sounds.carAmb.play();
-    obstacle.soundId = soundId;
-    obstacle.soundKey = getSoundKeyFromInstance(sounds.carAmb);
-    sounds.carAmb.loop(false, soundId);
-
-    sounds.carAmb.once('end', () => {
-        const isStillActiveCar = gameState.running && gameState.obstacles.some(
-            activeObstacle => activeObstacle.id === obstacle.id && activeObstacle.type === 'car' && !activeObstacle.carJumped
-        );
-
-        if (!isStillActiveCar) {
-            return;
-        }
-
-        ensureCarAmbiencePlayback(obstacle);
-        updateSingleObstacleSound(obstacle);
-    }, soundId);
-}
-
 function updateSingleObstacleSound(obstacle) {
     const soundName = obstacle.soundKey || getSoundNameForObstacle(obstacle);
     if (!soundName || !sounds[soundName]) return;
-
-    if (obstacle.type === 'car') {
-        ensureCarAmbiencePlayback(obstacle);
-    }
 
     if (!obstacle.soundId) return;
     
@@ -471,7 +441,9 @@ function spawnObstacle() {
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
     } else if (obstacleType === 'car') {
-        ensureCarAmbiencePlayback(obstacle);
+        obstacle.soundId = sounds.carAmb.play();
+        sounds.carAmb.loop(false, obstacle.soundId);
+        obstacle.soundKey = getSoundKeyFromInstance(sounds.carAmb);
         updateSingleObstacleSound(obstacle);
     }
 }
@@ -614,7 +586,6 @@ function checkCollisions() {
         ) {
             gameState.onCarId = obstacle.id;
             gameState.carRoofSteps = 0;
-            ensureCarAmbiencePlayback(obstacle);
             updateSingleObstacleSound(obstacle);
             stopFootsteps();
             startCarRoofSteps();
