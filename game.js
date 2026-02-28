@@ -25,6 +25,8 @@ function saveCoinTotal() {
 let gameState = {
     running: false,
     playerLane: 1, // 0 = left, 1 = middle, 2 = right
+    previousLane: 1,
+    lastLaneChangeAt: 0,
     score: 0,
     coinProgress: loadSavedCoinTotal(),
     coinsCollected: 0,
@@ -51,7 +53,8 @@ const obstacleApproachMix = {
 
 let nextObstacleId = 1;
 let stunRecoveryTimeout = null;
-const hazardCollisionDistance = 1;
+const hazardCollisionDistance = 2;
+const laneChangeGraceMs = 220;
 const pointsPerLevel = 50;
 
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
@@ -120,6 +123,8 @@ function startGame() {
     gameState = {
         running: true,
         playerLane: 1,
+        previousLane: 1,
+        lastLaneChangeAt: 0,
         score: 0,
         coinProgress: loadSavedCoinTotal(),
         coinsCollected: 0,
@@ -163,7 +168,9 @@ function handleKeyPress(e) {
         case 'ArrowLeft':
             e.preventDefault();
             if (isStunned()) return;
+            gameState.previousLane = gameState.playerLane;
             gameState.playerLane = (gameState.playerLane + 2) % 3;
+            gameState.lastLaneChangeAt = Date.now();
             if (gameState.playerLane === 1) {
                 playSound('turnCenter');
             } else {
@@ -175,7 +182,9 @@ function handleKeyPress(e) {
         case 'ArrowRight':
             e.preventDefault();
             if (isStunned()) return;
+            gameState.previousLane = gameState.playerLane;
             gameState.playerLane = (gameState.playerLane + 1) % 3;
+            gameState.lastLaneChangeAt = Date.now();
             if (gameState.playerLane === 1) {
                 playSound('turnCenter');
             } else {
@@ -514,6 +523,17 @@ function getSoundNameForObstacle(obstacle) {
 function checkCollisions() {
     for (let i = gameState.obstacles.length - 1; i >= 0; i--) {
         const obstacle = gameState.obstacles[i];
+        const recentlyChangedLane = Date.now() - gameState.lastLaneChangeAt <= laneChangeGraceMs;
+
+        if (
+            recentlyChangedLane &&
+            (obstacle.type === 'cane' || obstacle.type === 'skateboard') &&
+            obstacle.lane === gameState.previousLane &&
+            obstacle.lane !== gameState.playerLane &&
+            Math.abs(obstacle.distance) <= hazardCollisionDistance
+        ) {
+            continue;
+        }
 
         if (
             obstacle.type === 'car' &&
