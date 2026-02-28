@@ -221,7 +221,6 @@ function handleKeyPress(e) {
 
             playSound('jump');
             stopFootsteps();
-            updateStatus('Jumped. In the air...');
             jumpLandingTimeout = setTimeout(() => {
                 jumpLandingTimeout = null;
                 if (!gameState.running || isStunned() || gameState.onCarId !== null) {
@@ -232,7 +231,6 @@ function handleKeyPress(e) {
                 if (gameState.running && !isStunned()) {
                     playFootsteps();
                 }
-                updateStatus(`Landed. Score: ${gameState.score}`);
             }, carJumpAirTimeMs);
             break;
     }
@@ -276,12 +274,10 @@ function tryJumpOffCar() {
             clearTimeout(jumpLandingTimeout);
             jumpLandingTimeout = null;
         }
-        updateStatus(`Jumped off the car! +${carJumpBonus} points. Landing in ${carJumpAirTimeMs / 1000} seconds... Score: ${gameState.score}`);
         jumpLandingTimeout = setTimeout(() => {
             jumpLandingTimeout = null;
             if (gameState.running && !isStunned() && gameState.onCarId === null) {
                 playFootsteps();
-                updateStatus(`Landed. Score: ${gameState.score}`);
             }
         }, carJumpAirTimeMs);
         checkLevelUp();
