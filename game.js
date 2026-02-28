@@ -56,7 +56,7 @@ let stunRecoveryTimeout = null;
 let jumpLandingTimeout = null;
 const hazardCollisionDistance = 2;
 const laneChangeGraceMs = 220;
-const carJumpAirTimeMs = 3000;
+const carJumpAirTimeMs = 2000;
 const pointsPerLevel = 50;
 
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
@@ -204,18 +204,13 @@ function handleKeyPress(e) {
         case 'Spacebar':
             e.preventDefault();
 
-            if (jumpLandingTimeout) {
+            if (gameState.onCarId !== null) {
+                playSound('jump');
+                tryJumpOffCar();
                 break;
             }
 
-            if (gameState.onCarId !== null) {
-                // Ignore accidental jump presses during the first roof steps.
-                if (gameState.carRoofSteps < 4) {
-                    break;
-                }
-
-                playSound('jump');
-                tryJumpOffCar();
+            if (jumpLandingTimeout) {
                 break;
             }
 
@@ -261,30 +256,24 @@ function tryJumpOffCar() {
         return;
     }
 
-    // Car jump becomes available only after 4 roof steps.
-    if (gameState.carRoofSteps >= 4) {
-        stopCarRoofSteps();
-        carObstacle.carJumped = true;
-        gameState.onCarId = null;
-        gameState.carRoofSteps = 0;
-        gameState.score += carJumpBonus;
-        updateHUD();
-        stopFootsteps();
-        if (jumpLandingTimeout) {
-            clearTimeout(jumpLandingTimeout);
-            jumpLandingTimeout = null;
-        }
-        jumpLandingTimeout = setTimeout(() => {
-            jumpLandingTimeout = null;
-            if (gameState.running && !isStunned() && gameState.onCarId === null) {
-                playFootsteps();
-            }
-        }, carJumpAirTimeMs);
-        checkLevelUp();
-    } else {
-        // Too early to jump from roof; ignore input.
-        return;
+    stopCarRoofSteps();
+    carObstacle.carJumped = true;
+    gameState.onCarId = null;
+    gameState.carRoofSteps = 0;
+    gameState.score += carJumpBonus;
+    updateHUD();
+    stopFootsteps();
+    if (jumpLandingTimeout) {
+        clearTimeout(jumpLandingTimeout);
+        jumpLandingTimeout = null;
     }
+    jumpLandingTimeout = setTimeout(() => {
+        jumpLandingTimeout = null;
+        if (gameState.running && !isStunned() && gameState.onCarId === null) {
+            playFootsteps();
+        }
+    }, carJumpAirTimeMs);
+    checkLevelUp();
 }
 
 function getDirectionalObstacleSound(obstacle) {
