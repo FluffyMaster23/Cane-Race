@@ -41,6 +41,13 @@ let gameState = {
 };
 
 const carJumpBonus = 10;
+const obstacleApproachMix = {
+    minVolume: 0.08,
+    distanceRange: 120,
+    fadeOutRange: 10,
+    caneBoost: 1.25,
+    skateboardBoost: 1.45
+};
 
 let nextObstacleId = 1;
 let stunRecoveryTimeout = null;
@@ -244,8 +251,6 @@ function tryJumpOffCar() {
 
 function updateSingleObstacleSound(obstacle) {
     if (!obstacle.soundId) return;
-
-    if (obstacle.type === 'cane' || obstacle.type === 'skateboard') return;
     
     const soundName = obstacle.soundKey || getSoundNameForObstacle(obstacle);
     if (!soundName || !sounds[soundName]) return;
@@ -256,11 +261,19 @@ function updateSingleObstacleSound(obstacle) {
     // At distance 0: loud (1.0)
     let volume = 0;
     if (obstacle.distance > 0) {
-        volume = Math.max(0.05, 1 - (obstacle.distance / 120));
+        volume = Math.max(obstacleApproachMix.minVolume, 1 - (obstacle.distance / obstacleApproachMix.distanceRange));
     } else {
         // Fading out after passing
-        volume = Math.max(0, 1 + (obstacle.distance / 10));
+        volume = Math.max(0, 1 + (obstacle.distance / obstacleApproachMix.fadeOutRange));
     }
+
+    if (obstacle.type === 'cane') {
+        volume *= obstacleApproachMix.caneBoost;
+    } else if (obstacle.type === 'skateboard') {
+        volume *= obstacleApproachMix.skateboardBoost;
+    }
+
+    volume = Math.min(1, volume);
 
     // Apply volume
     sounds[soundName].volume(volume, obstacle.soundId);
@@ -339,6 +352,7 @@ function spawnObstacle() {
         obstacle.soundId = caneSound.play();
         caneSound.loop(false, obstacle.soundId);
         obstacle.soundKey = getSoundKeyFromInstance(caneSound);
+        updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'skateboard') {
         // Select sound based on lane
         let skateboardSound;
@@ -353,6 +367,7 @@ function spawnObstacle() {
         obstacle.soundId = skateboardSound.play();
         skateboardSound.loop(false, obstacle.soundId);
         obstacle.soundKey = getSoundKeyFromInstance(skateboardSound);
+        updateSingleObstacleSound(obstacle);
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
     } else if (obstacleType === 'car') {
@@ -369,7 +384,7 @@ function moveObstacles() {
         const obstacle = gameState.obstacles[i];
         obstacle.distance -= 1;
 
-        // Update proximity-based audio for dynamic sounds (such as car)
+        // Update proximity-based approach audio
         updateSingleObstacleSound(obstacle);
         
         // Keep coins active slightly longer if player dodged them at the pass point
