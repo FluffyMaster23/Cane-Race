@@ -45,6 +45,7 @@ let gameState = {
 const carJumpBonus = 10;
 const obstacleApproachMix = {
     minVolume: 0.2,
+    carMinVolume: 0.35,
     distanceRange: 120,
     fadeOutRange: 10,
     caneBoost: 1.5,
@@ -354,6 +355,8 @@ function updateSingleObstacleSound(obstacle) {
         volume *= obstacleApproachMix.caneBoost;
     } else if (obstacle.type === 'skateboard') {
         volume *= obstacleApproachMix.skateboardBoost;
+    } else if (obstacle.type === 'car') {
+        volume = Math.max(obstacleApproachMix.carMinVolume, volume);
     }
 
     volume = Math.min(1, volume);
@@ -449,6 +452,13 @@ function moveObstacles() {
     // Move all obstacles closer to player
     for (let i = gameState.obstacles.length - 1; i >= 0; i--) {
         const obstacle = gameState.obstacles[i];
+
+        if (obstacle.type === 'car' && gameState.onCarId === obstacle.id && !obstacle.carJumped) {
+            obstacle.distance = 0;
+            updateSingleObstacleSound(obstacle);
+            continue;
+        }
+
         obstacle.distance -= 1;
 
         // Update proximity-based approach audio
