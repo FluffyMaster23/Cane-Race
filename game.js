@@ -87,7 +87,13 @@ const sounds = {
     
     caneHit: new Howl({ src: ['sounds/player/caneHit.wav'] }),
     skateboardHit: new Howl({ src: ['sounds/player/skateboardhit.wav'] }),
-    carAmb: new Howl({ src: ['sounds/car/carAmb.wav'], loop: false }),
+    carAmb: new Howl({
+        src: ['sounds/car/carAmb.wav'],
+        loop: false,
+        html5: true,
+        onloaderror: (_, error) => console.warn('carAmb load error:', error),
+        onplayerror: (_, error) => console.warn('carAmb play error:', error)
+    }),
     carStep1: new Howl({ src: ['sounds/car/carstep1.wav'], loop: false }),
     carStep2: new Howl({ src: ['sounds/car/carstep2.wav'], loop: false }),
     carStep3: new Howl({ src: ['sounds/car/carstep3.wav'], loop: false }),
