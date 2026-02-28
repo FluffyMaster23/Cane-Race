@@ -257,6 +257,9 @@ function tryJumpOffCar() {
     }
 
     stopCarRoofSteps();
+    if (carObstacle.soundId && sounds.carAmb) {
+        sounds.carAmb.stop(carObstacle.soundId);
+    }
     carObstacle.carJumped = true;
     gameState.onCarId = null;
     gameState.carRoofSteps = 0;
@@ -430,7 +433,7 @@ function spawnObstacle() {
         // Coins don't make sound until collected
     } else if (obstacleType === 'car') {
         obstacle.soundId = sounds.carAmb.play();
-        sounds.carAmb.loop(false, obstacle.soundId);
+        sounds.carAmb.loop(true, obstacle.soundId);
         obstacle.soundKey = getSoundKeyFromInstance(sounds.carAmb);
         updateSingleObstacleSound(obstacle);
     }
@@ -485,7 +488,7 @@ function moveObstacles() {
             if (obstacle.type === 'car' && gameState.onCarId === obstacle.id && !obstacle.carJumped) {
                 gameState.onCarId = null;
                 gameState.carRoofSteps = 0;
-                fallFromCar();
+                fallFromCar(obstacle.id);
             }
             
             gameState.obstacles.splice(i, 1);
@@ -494,8 +497,15 @@ function moveObstacles() {
     }
 }
 
-function fallFromCar() {
+function fallFromCar(fallenCarId = null) {
     if (!gameState.running) return;
+
+    if (fallenCarId !== null) {
+        const fallenCar = gameState.obstacles.find(obstacle => obstacle.id === fallenCarId && obstacle.type === 'car');
+        if (fallenCar && fallenCar.soundId && sounds.carAmb) {
+            sounds.carAmb.stop(fallenCar.soundId);
+        }
+    }
 
     gameState.carRoofSteps = 0;
     gameState.stunnedUntil = Date.now() + 3000;
@@ -560,6 +570,15 @@ function checkCollisions() {
         ) {
             gameState.onCarId = obstacle.id;
             gameState.carRoofSteps = 0;
+            if (obstacle.soundId && sounds.carAmb) {
+                sounds.carAmb.loop(true, obstacle.soundId);
+                if (!sounds.carAmb.playing(obstacle.soundId)) {
+                    obstacle.soundId = sounds.carAmb.play();
+                    sounds.carAmb.loop(true, obstacle.soundId);
+                    obstacle.soundKey = getSoundKeyFromInstance(sounds.carAmb);
+                    updateSingleObstacleSound(obstacle);
+                }
+            }
             stopFootsteps();
             startCarRoofSteps();
             continue;
@@ -741,7 +760,7 @@ function startCarRoofSteps() {
                 gameState.onCarId = null;
                 gameState.carRoofSteps = 0;
                 carObstacle.distance = -6;
-                fallFromCar();
+                fallFromCar(carObstacle.id);
             }
             return;
         }
