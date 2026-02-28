@@ -35,7 +35,7 @@ let gameState = {
     baseSpeed: 180, // Base speed in ms for obstacle movement - moderate pace
     obstacles: [], // Array of {type: 'cane'|'skateboard'|'coin', lane: 0-2, distance: number, coinAmount: number}
     lastObstacleSpawn: 0,
-    spawnInterval: 8000, // Spawn obstacles every 8 seconds at level 1
+    spawnInterval: 5000, // Spawn obstacles every 5 seconds at level 1
     animationFrame: null,
     stunnedUntil: 0,
     onCarId: null,
@@ -53,8 +53,10 @@ const obstacleApproachMix = {
 
 let nextObstacleId = 1;
 let stunRecoveryTimeout = null;
+let jumpLandingTimeout = null;
 const hazardCollisionDistance = 2;
 const laneChangeGraceMs = 220;
+const carJumpAirTimeMs = 3000;
 const pointsPerLevel = 50;
 
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
@@ -133,7 +135,7 @@ function startGame() {
         baseSpeed: 180,
         obstacles: [],
         lastObstacleSpawn: Date.now(),
-        spawnInterval: 8000,
+        spawnInterval: 5000,
         animationFrame: null,
         stunnedUntil: 0,
         onCarId: null,
@@ -144,6 +146,10 @@ function startGame() {
     if (stunRecoveryTimeout) {
         clearTimeout(stunRecoveryTimeout);
         stunRecoveryTimeout = null;
+    }
+    if (jumpLandingTimeout) {
+        clearTimeout(jumpLandingTimeout);
+        jumpLandingTimeout = null;
     }
     
     // Set up keyboard controls (avoid duplicate listeners on replay)
@@ -249,10 +255,19 @@ function tryJumpOffCar() {
         gameState.carRoofSteps = 0;
         gameState.score += carJumpBonus;
         updateHUD();
-        if (gameState.running && !isStunned()) {
-            playFootsteps();
+        stopFootsteps();
+        if (jumpLandingTimeout) {
+            clearTimeout(jumpLandingTimeout);
+            jumpLandingTimeout = null;
         }
-        updateStatus(`Jumped off the car! +${carJumpBonus} points. Score: ${gameState.score}`);
+        updateStatus(`Jumped off the car! +${carJumpBonus} points. Landing in ${carJumpAirTimeMs / 1000} seconds... Score: ${gameState.score}`);
+        jumpLandingTimeout = setTimeout(() => {
+            jumpLandingTimeout = null;
+            if (gameState.running && !isStunned() && gameState.onCarId === null) {
+                playFootsteps();
+                updateStatus(`Landed. Score: ${gameState.score}`);
+            }
+        }, carJumpAirTimeMs);
         checkLevelUp();
     } else {
         // Too early to jump from roof; ignore input.
@@ -607,6 +622,10 @@ function endGame(hitBy) {
     if (stunRecoveryTimeout) {
         clearTimeout(stunRecoveryTimeout);
         stunRecoveryTimeout = null;
+    }
+    if (jumpLandingTimeout) {
+        clearTimeout(jumpLandingTimeout);
+        jumpLandingTimeout = null;
     }
     
     // Stop footstep sounds
