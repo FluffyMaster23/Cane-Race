@@ -169,6 +169,7 @@ function handleKeyPress(e) {
             } else {
                 playSound('turnLeft');
             }
+            updateDirectionalObstacleSounds();
             break;
             
         case 'ArrowRight':
@@ -180,6 +181,7 @@ function handleKeyPress(e) {
             } else {
                 playSound('turnRight');
             }
+            updateDirectionalObstacleSounds();
             break;
             
         case 'ArrowUp':
@@ -247,6 +249,47 @@ function tryJumpOffCar() {
         // Too early to jump from roof; ignore input.
         return;
     }
+}
+
+function getDirectionalObstacleSound(obstacle) {
+    const relativeLane = obstacle.lane - gameState.playerLane;
+
+    if (obstacle.type === 'cane') {
+        if (relativeLane < 0) return sounds.caneConcreteleft;
+        if (relativeLane > 0) return sounds.caneConcreteright;
+        return sounds.caneConcretecenter;
+    }
+
+    if (obstacle.type === 'skateboard') {
+        if (relativeLane < 0) return sounds.skateboardLeft;
+        if (relativeLane > 0) return sounds.skateboardRight;
+        return sounds.skateboardCenter;
+    }
+
+    return null;
+}
+
+function updateDirectionalObstacleSounds() {
+    gameState.obstacles.forEach(obstacle => {
+        if (!obstacle.soundId) return;
+        if (obstacle.type !== 'cane' && obstacle.type !== 'skateboard') return;
+
+        const newSound = getDirectionalObstacleSound(obstacle);
+        if (!newSound) return;
+
+        const currentSoundName = obstacle.soundKey || getSoundNameForObstacle(obstacle);
+        const newSoundName = getSoundKeyFromInstance(newSound);
+        if (currentSoundName === newSoundName) return;
+
+        if (currentSoundName && sounds[currentSoundName]) {
+            sounds[currentSoundName].stop(obstacle.soundId);
+        }
+
+        obstacle.soundId = newSound.play();
+        newSound.loop(false, obstacle.soundId);
+        obstacle.soundKey = newSoundName;
+        updateSingleObstacleSound(obstacle);
+    });
 }
 
 function updateSingleObstacleSound(obstacle) {
