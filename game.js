@@ -347,8 +347,7 @@ function updateSingleObstacleSound(obstacle) {
     if (typeof obstacleSound.stereo === 'function') {
         try {
             obstacleSound.stereo(getObstaclePan(obstacle), obstacle.soundId);
-        } catch (error) {
-            // Some sounds may not support spatial controls in all playback modes.
+        } catch {
         }
     }
 }
