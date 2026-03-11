@@ -85,7 +85,6 @@ const sounds = {
     carAmb: new Howl({
         src: ['sounds/car/carAmb.wav'],
         loop: false,
-        html5: true,
         onloaderror: (_, error) => console.warn('carAmb load error:', error),
         onplayerror: (_, error) => console.warn('carAmb play error:', error)
     }),
@@ -346,7 +345,11 @@ function updateSingleObstacleSound(obstacle) {
     obstacleSound.volume(volume, obstacle.soundId);
 
     if (typeof obstacleSound.stereo === 'function') {
-        obstacleSound.stereo(getObstaclePan(obstacle), obstacle.soundId);
+        try {
+            obstacleSound.stereo(getObstaclePan(obstacle), obstacle.soundId);
+        } catch (error) {
+            // Some sounds may not support spatial controls in all playback modes.
+        }
     }
 }
 
