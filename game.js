@@ -316,7 +316,15 @@ function updateSingleObstacleSound(obstacle) {
     const soundName = obstacle.soundKey || getBaseObstacleSoundKey(obstacle);
     if (!soundName || !sounds[soundName]) return;
 
-    if (!obstacle.soundId) return;
+    if (!obstacle.soundId) {
+        if (obstacle.type === 'car' && obstacle.distance <= 4) {
+            obstacle.soundId = sounds.carAmb.play();
+            sounds.carAmb.loop(false, obstacle.soundId);
+            obstacle.soundKey = 'carAmb';
+        } else {
+            return;
+        }
+    }
 
     const obstacleSound = sounds[soundName];
     
@@ -427,10 +435,7 @@ function spawnObstacle() {
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
     } else if (obstacleType === 'car') {
-        obstacle.soundId = sounds.carAmb.play();
-        sounds.carAmb.loop(false, obstacle.soundId);
         obstacle.soundKey = 'carAmb';
-        updateSingleObstacleSound(obstacle);
     }
 }
 
