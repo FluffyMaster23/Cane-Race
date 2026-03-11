@@ -342,13 +342,14 @@ function updateSingleObstacleSound(obstacle) {
 
     volume = Math.min(1, volume);
 
-    obstacleSound.volume(volume, obstacle.soundId);
+    try {
+        obstacleSound.volume(volume, obstacle.soundId);
 
-    if (typeof obstacleSound.stereo === 'function') {
-        try {
+        if (typeof obstacleSound.stereo === 'function') {
             obstacleSound.stereo(getObstaclePan(obstacle), obstacle.soundId);
-        } catch {
         }
+    } catch (error) {
+        console.warn(`Obstacle sound update failed for ${soundName}:`, error);
     }
 }
 
