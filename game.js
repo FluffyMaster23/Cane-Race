@@ -318,9 +318,17 @@ function updateSingleObstacleSound(obstacle) {
 
     if (!obstacle.soundId) {
         if (obstacle.type === 'car' && obstacle.distance <= 4) {
-            obstacle.soundId = sounds.carAmb.play();
-            sounds.carAmb.loop(false, obstacle.soundId);
-            obstacle.soundKey = 'carAmb';
+            try {
+                obstacle.soundId = sounds.carAmb.play();
+                if (!obstacle.soundId) {
+                    return;
+                }
+                sounds.carAmb.loop(false, obstacle.soundId);
+                obstacle.soundKey = 'carAmb';
+            } catch (error) {
+                console.warn('carAmb start failed:', error);
+                return;
+            }
         } else {
             return;
         }
@@ -369,23 +377,29 @@ function playSound(soundName) {
 
 function gameLoop() {
     if (!gameState.running) return;
-    
-const currentTime = Date.now();
-    
-    // Spawn new obstacles
-    if (currentTime - gameState.lastObstacleSpawn > gameState.spawnInterval / gameState.speed) {
-        spawnObstacle();
-        gameState.lastObstacleSpawn = currentTime;
+
+    try {
+        const currentTime = Date.now();
+
+        // Spawn new obstacles
+        if (currentTime - gameState.lastObstacleSpawn > gameState.spawnInterval / gameState.speed) {
+            spawnObstacle();
+            gameState.lastObstacleSpawn = currentTime;
+        }
+
+        // Move obstacles toward player
+        moveObstacles();
+
+        // Check collisions
+        checkCollisions();
+    } catch (error) {
+        console.warn('gameLoop tick failed:', error);
     }
-    
-    // Move obstacles toward player
-    moveObstacles();
-    
-    // Check collisions
-    checkCollisions();
-    
-    // Continue game loop
-    gameState.animationFrame = setTimeout(gameLoop, gameState.baseSpeed / gameState.speed);
+
+    // Continue game loop even if one tick fails
+    if (gameState.running) {
+        gameState.animationFrame = setTimeout(gameLoop, gameState.baseSpeed / gameState.speed);
+    }
 }
 
 function spawnObstacle() {
