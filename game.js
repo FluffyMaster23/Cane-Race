@@ -316,23 +316,7 @@ function updateSingleObstacleSound(obstacle) {
     const soundName = obstacle.soundKey || getBaseObstacleSoundKey(obstacle);
     if (!soundName || !sounds[soundName]) return;
 
-    if (!obstacle.soundId) {
-        if (obstacle.type === 'car' && obstacle.distance <= 4) {
-            try {
-                obstacle.soundId = sounds.carAmb.play();
-                if (!obstacle.soundId) {
-                    return;
-                }
-                sounds.carAmb.loop(false, obstacle.soundId);
-                obstacle.soundKey = 'carAmb';
-            } catch (error) {
-                console.warn('carAmb start failed:', error);
-                return;
-            }
-        } else {
-            return;
-        }
-    }
+    if (!obstacle.soundId) return;
 
     const obstacleSound = sounds[soundName];
     
@@ -377,29 +361,23 @@ function playSound(soundName) {
 
 function gameLoop() {
     if (!gameState.running) return;
-
-    try {
-        const currentTime = Date.now();
-
-        // Spawn new obstacles
-        if (currentTime - gameState.lastObstacleSpawn > gameState.spawnInterval / gameState.speed) {
-            spawnObstacle();
-            gameState.lastObstacleSpawn = currentTime;
-        }
-
-        // Move obstacles toward player
-        moveObstacles();
-
-        // Check collisions
-        checkCollisions();
-    } catch (error) {
-        console.warn('gameLoop tick failed:', error);
+    
+const currentTime = Date.now();
+    
+    // Spawn new obstacles
+    if (currentTime - gameState.lastObstacleSpawn > gameState.spawnInterval / gameState.speed) {
+        spawnObstacle();
+        gameState.lastObstacleSpawn = currentTime;
     }
-
-    // Continue game loop even if one tick fails
-    if (gameState.running) {
-        gameState.animationFrame = setTimeout(gameLoop, gameState.baseSpeed / gameState.speed);
-    }
+    
+    // Move obstacles toward player
+    moveObstacles();
+    
+    // Check collisions
+    checkCollisions();
+    
+    // Continue game loop
+    gameState.animationFrame = setTimeout(gameLoop, gameState.baseSpeed / gameState.speed);
 }
 
 function spawnObstacle() {
@@ -449,7 +427,10 @@ function spawnObstacle() {
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
     } else if (obstacleType === 'car') {
+        obstacle.soundId = sounds.carAmb.play();
+        sounds.carAmb.loop(false, obstacle.soundId);
         obstacle.soundKey = 'carAmb';
+        updateSingleObstacleSound(obstacle);
     }
 }
 
