@@ -85,8 +85,8 @@ const sounds = {
     carAmb: new Howl({
         src: ['sounds/car/carAmb.wav'],
         loop: false,
-        onloaderror: (_, error) => console.warn('carAmb load error:', error),
-        onplayerror: (_, error) => console.warn('carAmb play error:', error)
+        html5: false,
+        preload: true
     }),
     carStep1: new Howl({ src: ['sounds/car/carstep1.wav'], loop: false }),
     carStep2: new Howl({ src: ['sounds/car/carstep2.wav'], loop: false }),
@@ -275,7 +275,7 @@ function tryJumpOffCar() {
     }
 
     stopCarRoofSteps();
-    if (carObstacle.soundId && sounds.carAmb) {
+    if (carObstacle.soundId !== null && sounds.carAmb) {
         sounds.carAmb.stop(carObstacle.soundId);
     }
     carObstacle.carJumped = true;
@@ -427,10 +427,12 @@ function spawnObstacle() {
     } else if (obstacleType === 'coin') {
         // Coins don't make sound until collected
     } else if (obstacleType === 'car') {
-        obstacle.soundId = sounds.carAmb.play();
-        sounds.carAmb.loop(false, obstacle.soundId);
-        obstacle.soundKey = 'carAmb';
-        updateSingleObstacleSound(obstacle);
+        const carSoundId = sounds.carAmb.play();
+        if (typeof carSoundId === 'number') {
+            obstacle.soundId = carSoundId;
+            obstacle.soundKey = 'carAmb';
+            updateSingleObstacleSound(obstacle);
+        }
     }
 }
 
@@ -465,7 +467,7 @@ function moveObstacles() {
         if (obstacle.distance < -5) {
             
             // Stop the sound if still playing
-            if (obstacle.soundId) {
+            if (obstacle.soundId !== null) {
                 const soundName = obstacle.soundKey || getSoundNameForObstacle(obstacle);
                 if (soundName && sounds[soundName]) {
                     sounds[soundName].stop(obstacle.soundId);
@@ -504,7 +506,7 @@ function fallFromCar(fallenCarId = null) {
 
     if (fallenCarId !== null) {
         const fallenCar = gameState.obstacles.find(obstacle => obstacle.id === fallenCarId && obstacle.type === 'car');
-        if (fallenCar && fallenCar.soundId && sounds.carAmb) {
+        if (fallenCar && fallenCar.soundId !== null && sounds.carAmb) {
             sounds.carAmb.stop(fallenCar.soundId);
         }
     }
@@ -632,7 +634,7 @@ function endGame(hitBy) {
     // Fade out obstacle sounds so death audio is clear
     const obstacleFadeDuration = 700;
     gameState.obstacles.forEach(obstacle => {
-        if (obstacle.soundId) {
+        if (obstacle.soundId !== null) {
             const soundName = obstacle.soundKey || getSoundNameForObstacle(obstacle);
             if (soundName && sounds[soundName]) {
                 const obstacleSound = sounds[soundName];
