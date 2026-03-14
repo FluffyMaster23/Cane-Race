@@ -58,7 +58,7 @@ let jumpLandingTimeout = null;
 const hazardCollisionDistance = 2;
 const laneChangeGraceMs = 220;
 const carJumpAirTimeMs = 2000;
-const pointsPerLevel = 50;
+const pointsPerLevel = 30;
 const laneCount = 3;
 
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
@@ -402,7 +402,7 @@ function spawnObstacle() {
         type: obstacleType,
         lane: lane,
         distance: 100, // Start at distance 100, moves toward 0 (player is at 0)
-        coinAmount: obstacleType === 'coin' ? Math.floor(Math.random() * 5) + 1 : 0,
+        coinAmount: obstacleType === 'coin' ? Math.floor(Math.random() * 10) + 1 : 0,
         soundId: null, // Store the sound ID for this obstacle
         soundKey: null,
         carJumped: false,
