@@ -61,42 +61,47 @@ const carJumpAirTimeMs = 2000;
 const pointsPerLevel = 30;
 const laneCount = 3;
 
+function createSound(src, options = {}) {
+    return new Howl({
+        src: [src],
+        html5: true,
+        preload: true,
+        ...options
+    });
+}
+
 // Sound objects - ADD YOUR SOUND FILE NAMES HERE
 const sounds = {
     // Player sounds
-    jump: new Howl({ src: ['sounds/player/jump.wav'] }),
-    turnLeft: new Howl({ src: ['sounds/player/turn_left.wav'] }),
-    turnRight: new Howl({ src: ['sounds/player/turn_right.wav'] }),
-    turnCenter: new Howl({ src: ['sounds/player/turn_center.wav'] }),
+    jump: createSound('sounds/player/jump.wav'),
+    turnLeft: createSound('sounds/player/turn_left.wav'),
+    turnRight: createSound('sounds/player/turn_right.wav'),
+    turnCenter: createSound('sounds/player/turn_center.wav'),
 
     // Item sounds
-    coinCollect: new Howl({
-        src: ['sounds/items/coin/pickupcoin.wav'], 
+    coinCollect: createSound('sounds/items/coin/pickupcoin.wav', {
         volume: 1.0
     }),
-    coinLoop: new Howl({ src: ['sounds/items/coin/coin.wav'], loop: true }),
+    coinLoop: createSound('sounds/items/coin/coin.wav', { loop: true }),
     
     // Obstacle sounds - centered sources, panned per obstacle instance
-    caneConcretecenter: new Howl({ src: ['sounds/cane/cane_on_concrete_center.wav'], loop: false }),
-    skateboardCenter: new Howl({ src: ['sounds/skateboard/skateboard_center.wav'], loop: false }),
+    caneConcretecenter: createSound('sounds/cane/cane_on_concrete_center.wav', { loop: false }),
+    skateboardCenter: createSound('sounds/skateboard/skateboard_center.wav', { loop: false }),
     
-    caneHit: new Howl({ src: ['sounds/player/caneHit.wav'] }),
-    skateboardHit: new Howl({ src: ['sounds/player/skateboardhit.wav'] }),
-    carAmb: new Howl({
-        src: ['sounds/car/carAmb.wav'],
+    caneHit: createSound('sounds/player/caneHit.wav'),
+    skateboardHit: createSound('sounds/player/skateboardhit.wav'),
+    carAmb: createSound('sounds/car/carAmb.wav', {
         loop: false,
-        html5: false,
-        preload: true
     }),
-    carStep1: new Howl({ src: ['sounds/car/carstep1.wav'], loop: false }),
-    carStep2: new Howl({ src: ['sounds/car/carstep2.wav'], loop: false }),
-    carStep3: new Howl({ src: ['sounds/car/carstep3.wav'], loop: false }),
+    carStep1: createSound('sounds/car/carstep1.wav', { loop: false }),
+    carStep2: createSound('sounds/car/carstep2.wav', { loop: false }),
+    carStep3: createSound('sounds/car/carstep3.wav', { loop: false }),
     
     // Game sounds
     levelUp: null, // new Howl({src: ['sounds/level_up.mp3']}),
-    playerSteps1: new Howl({ src: ['sounds/player/concrete1.wav'] }),
-    playerSteps2: new Howl({ src: ['sounds/player/concrete2.wav'] }),
-    playerSteps3: new Howl({ src: ['sounds/player/concrete3.wav'] }),
+    playerSteps1: createSound('sounds/player/concrete1.wav'),
+    playerSteps2: createSound('sounds/player/concrete2.wav'),
+    playerSteps3: createSound('sounds/player/concrete3.wav'),
     gameOver: null // new Howl({src: ['sounds/game_over.mp3']})
 };
 
@@ -104,6 +109,29 @@ const sounds = {
 let currentFootstepIndex = 0;
 let footstepInterval = null;
 let carStepInterval = null;
+let audioPreparationAttempted = false;
+
+function prepareAudioForGameplay() {
+    if (audioPreparationAttempted) {
+        return;
+    }
+
+    audioPreparationAttempted = true;
+
+    try {
+        if (typeof Howler !== 'undefined') {
+            Howler.mute(false);
+
+            if (Howler.ctx && Howler.ctx.state === 'suspended') {
+                Howler.ctx.resume().catch(() => {
+                    // Ignore resume failures; a later user gesture may unlock audio.
+                });
+            }
+        }
+    } catch (error) {
+        // Ignore audio preparation failures.
+    }
+}
 
 function normalizeLaneDelta(targetLane, playerLane) {
     let delta = ((targetLane - playerLane) % laneCount + laneCount) % laneCount;
@@ -126,6 +154,8 @@ function getObstaclePan(obstacle) {
 function startGame() {
     const playButton = document.getElementById("play");
     const gameArea = document.getElementById("gameArea");
+
+    prepareAudioForGameplay();
 
     // Hard reset any leftover timers/sounds from a previous run.
     if (gameState.animationFrame) {
@@ -187,6 +217,8 @@ function startGame() {
 
 function handleKeyPress(e) {
     if (!gameState.running) return;
+
+    prepareAudioForGameplay();
     
     switch(e.key) {
         case 'ArrowLeft':
