@@ -367,7 +367,7 @@ function getBaseObstacleSoundKey(obstacle) {
 
 function updateDirectionalObstacleSounds() {
     gameState.obstacles.forEach(obstacle => {
-        if (!obstacle.soundId) return;
+        if (obstacle.soundId === null) return;
         if (obstacle.type !== 'cane' && obstacle.type !== 'skateboard') return;
         updateSingleObstacleSound(obstacle);
     });
@@ -377,7 +377,7 @@ function updateSingleObstacleSound(obstacle) {
     const soundName = obstacle.soundKey || getBaseObstacleSoundKey(obstacle);
     if (!soundName || !sounds[soundName]) return;
 
-    if (!obstacle.soundId) return;
+    if (obstacle.soundId === null) return;
 
     const obstacleSound = sounds[soundName];
     
@@ -612,8 +612,8 @@ function checkCollisions() {
         if (
             obstacle.type === 'car' &&
             obstacle.lane === gameState.playerLane &&
-            obstacle.distance <= 2 &&
-            obstacle.distance >= -2 &&
+            obstacle.distance <= 3 &&
+            obstacle.distance >= -3 &&
             gameState.onCarId === null
         ) {
             gameState.onCarId = obstacle.id;
