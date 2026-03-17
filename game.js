@@ -163,20 +163,13 @@ function prepareAudioForGameplay() {
 }
 
 function normalizeLaneDelta(targetLane, playerLane) {
-    let delta = ((targetLane - playerLane) % laneCount + laneCount) % laneCount;
-    const half = Math.floor(laneCount / 2);
-
-    if (delta > half) {
-        delta -= laneCount;
-    }
-
-    return delta;
+    return targetLane - playerLane;
 }
 
 function getObstaclePan(obstacle) {
     const relativeLane = normalizeLaneDelta(obstacle.lane, gameState.playerLane);
-    const maxOffset = Math.max(1, Math.floor(laneCount / 2));
-    const rawPan = relativeLane / maxOffset;
+    const maxOffset = Math.max(1, laneCount - 1);
+    const rawPan = (relativeLane * 2) / maxOffset;
     return Math.max(-1, Math.min(1, rawPan));
 }
 
