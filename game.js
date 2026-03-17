@@ -90,7 +90,7 @@ const sounds = {
     caneHit: createSound('sounds/player/caneHit.wav'),
     skateboardHit: createSound('sounds/player/skateboardhit.wav'),
     carAmb: createSound('sounds/car/carAmb.wav', {
-        loop: false,
+        loop: true,
     }),
     carStep1: createSound('sounds/car/carstep1.wav', { loop: false }),
     carStep2: createSound('sounds/car/carstep2.wav', { loop: false }),
@@ -605,12 +605,13 @@ function checkCollisions() {
         if (
             obstacle.type === 'car' &&
             obstacle.lane === gameState.playerLane &&
-            obstacle.distance <= 3 &&
-            obstacle.distance >= -3 &&
+            obstacle.distance <= 4 &&
+            obstacle.distance >= 0 &&
             gameState.onCarId === null
         ) {
             gameState.onCarId = obstacle.id;
             gameState.carRoofSteps = 0;
+            obstacle.distance = 0;
             updateSingleObstacleSound(obstacle);
             stopFootsteps();
             startCarRoofSteps();
