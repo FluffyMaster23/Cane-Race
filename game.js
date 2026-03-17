@@ -64,7 +64,6 @@ const laneCount = 3;
 function createSound(src, options = {}) {
     return new Howl({
         src: [src],
-        html5: true,
         preload: true,
         ...options
     });
@@ -109,23 +108,53 @@ const sounds = {
 let currentFootstepIndex = 0;
 let footstepInterval = null;
 let carStepInterval = null;
-let audioPreparationAttempted = false;
+let audioUnlocked = false;
+let audioUnlockListenersAttached = false;
 
-function prepareAudioForGameplay() {
-    if (audioPreparationAttempted) {
+function detachAudioUnlockListeners() {
+    if (!audioUnlockListenersAttached) {
         return;
     }
 
-    audioPreparationAttempted = true;
+    const unlockEvents = ['pointerdown', 'mousedown', 'touchstart', 'keydown'];
+    unlockEvents.forEach(eventName => {
+        window.removeEventListener(eventName, prepareAudioForGameplay, true);
+    });
 
+    audioUnlockListenersAttached = false;
+}
+
+function attachAudioUnlockListeners() {
+    if (audioUnlockListenersAttached) {
+        return;
+    }
+
+    const unlockEvents = ['pointerdown', 'mousedown', 'touchstart', 'keydown'];
+    unlockEvents.forEach(eventName => {
+        window.addEventListener(eventName, prepareAudioForGameplay, {
+            capture: true,
+            passive: true
+        });
+    });
+
+    audioUnlockListenersAttached = true;
+}
+
+function prepareAudioForGameplay() {
     try {
         if (typeof Howler !== 'undefined') {
             Howler.mute(false);
+            Howler.autoSuspend = false;
 
             if (Howler.ctx && Howler.ctx.state === 'suspended') {
                 Howler.ctx.resume().catch(() => {
                     // Ignore resume failures; a later user gesture may unlock audio.
                 });
+            }
+
+            if (!Howler.ctx || Howler.ctx.state === 'running') {
+                audioUnlocked = true;
+                detachAudioUnlockListeners();
             }
         }
     } catch (error) {
@@ -852,3 +881,5 @@ if (document.readyState === 'loading') {
 } else {
     initializeHUDFromStorage();
 }
+
+attachAudioUnlockListeners();
